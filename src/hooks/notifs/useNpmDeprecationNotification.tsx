@@ -1,13 +1,14 @@
 import { isInBundledMode } from 'src/utils/bundledMode.js';
 import { getCurrentInstallationType } from 'src/utils/doctorDiagnostic.js';
 import { isEnvTruthy } from 'src/utils/envUtils.js';
+import { isSecAIActive } from 'src/services/secai/client.js';
 import { useStartupNotification } from './useStartupNotification.js';
-const NPM_DEPRECATION_MESSAGE = 'Claude Code has switched from npm to native installer. Run `claude install` or see https://docs.anthropic.com/en/docs/claude-code/getting-started for more options.';
+const NPM_DEPRECATION_MESSAGE = 'SecAI 已切换到原生安装器。请运行 `secai install`。';
 export function useNpmDeprecationNotification() {
   useStartupNotification(_temp);
 }
 async function _temp() {
-  if (isInBundledMode() || isEnvTruthy(process.env.DISABLE_INSTALLATION_CHECKS)) {
+  if (isSecAIActive() || isInBundledMode() || isEnvTruthy(process.env.DISABLE_INSTALLATION_CHECKS)) {
     return null;
   }
   const installationType = await getCurrentInstallationType();

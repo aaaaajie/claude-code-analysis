@@ -4,6 +4,7 @@ import stripAnsi from 'strip-ansi'
 import { markBackslashReturnUsed } from '../commands/terminalSetup/terminalSetup.js'
 import { addToHistory } from '../history.js'
 import type { Key } from '../ink.js'
+import { appendSecAILog, isSecAIActive } from '../services/secai/client.js'
 import type {
   InlineGhostText,
   TextInputState,
@@ -245,6 +246,15 @@ export function useTextInput({
   ])
 
   function handleEnter(key: Key) {
+    if (isSecAIActive()) {
+      appendSecAILog('text_input_enter', {
+        terminal: env.terminal,
+        length: originalValue.length,
+        multiline,
+        key_shift: key.shift,
+        key_meta: key.meta,
+      })
+    }
     if (
       multiline &&
       cursor.offset > 0 &&
@@ -260,8 +270,19 @@ export function useTextInput({
     }
     // Apple Terminal doesn't support custom Shift+Enter keybindings,
     // so we use native macOS modifier detection to check if Shift is held
-    if (env.terminal === 'Apple_Terminal' && isModifierPressed('shift')) {
-      return cursor.insert('\n')
+    if (env.terminal === 'Apple_Terminal') {
+      const shiftPressed = isModifierPressed('shift')
+      if (isSecAIActive()) {
+        appendSecAILog('text_input_apple_shift_check', {
+          shift_pressed: shiftPressed,
+        })
+      }
+      if (shiftPressed) {
+        return cursor.insert('\n')
+      }
+    }
+    if (isSecAIActive()) {
+      appendSecAILog('text_input_submit', { length: originalValue.length })
     }
     onSubmit?.(originalValue)
   }

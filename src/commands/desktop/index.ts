@@ -14,11 +14,10 @@ const desktop = {
   type: 'local-jsx',
   name: 'desktop',
   aliases: ['app'],
-  description: 'Continue the current session in Claude Desktop',
-  availability: ['claude-ai'],
-  isEnabled: isSupportedPlatform,
+  description: '在桌面端继续当前会话',
+  isEnabled: () => false,
   get isHidden() {
-    return !isSupportedPlatform()
+    return true
   },
   load: () => import('./desktop.js'),
 } satisfies Command

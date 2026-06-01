@@ -7,6 +7,7 @@ import type {
 import { randomUUID } from 'crypto'
 import type { QuerySource } from 'src/constants/querySource.js'
 import { logEvent } from 'src/services/analytics/index.js'
+import { appendSecAILog, isSecAIActive } from 'src/services/secai/client.js'
 import { getContentText } from 'src/utils/messages.js'
 import {
   findCommand,
@@ -139,6 +140,15 @@ export async function processUserInput({
   skipAttachments?: boolean
 }): Promise<ProcessUserInputBaseResult> {
   const inputString = typeof input === 'string' ? input : null
+  if (isSecAIActive()) {
+    appendSecAILog('process_user_input_start', {
+      mode,
+      input_type: inputString === null ? 'blocks' : 'string',
+      length: inputString?.length ?? -1,
+      query_source: querySource,
+      is_already_processing: isAlreadyProcessing === true,
+    })
+  }
   // Immediately show the user input prompt while we are still processing the input.
   // Skip for isMeta (system-generated prompts like scheduled tasks) — those
   // should run invisibly.
@@ -169,9 +179,24 @@ export async function processUserInput({
     skipAttachments,
     preExpansionInput,
   )
+  if (isSecAIActive()) {
+    appendSecAILog('process_user_input_base_end', {
+      should_query: result.shouldQuery,
+      message_count: result.messages.length,
+      allowed_tool_count: result.allowedTools?.length ?? 0,
+      model: result.model,
+      effort: result.effort,
+    })
+  }
   queryCheckpoint('query_process_user_input_base_end')
 
   if (!result.shouldQuery) {
+    if (isSecAIActive()) {
+      appendSecAILog('process_user_input_done', {
+        should_query: false,
+        reason: 'base_result',
+      })
+    }
     return result
   }
 
@@ -266,6 +291,12 @@ export async function processUserInput({
   // Happy path: onQuery will clear userInputOnProcessing via startTransition
   // so it resolves in the same frame as deferredMessages (no flicker gap).
   // Error paths are handled by handlePromptSubmit's finally block.
+  if (isSecAIActive()) {
+    appendSecAILog('process_user_input_done', {
+      should_query: result.shouldQuery,
+      message_count: result.messages.length,
+    })
+  }
   return result
 }
 

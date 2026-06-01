@@ -19,19 +19,19 @@ export async function call(onDone: LocalJSXCommandOnDone, context: LocalJSXComma
         isMax20x = profile?.organization?.organization_type === 'claude_max' && profile?.organization?.rate_limit_tier === 'default_claude_max_20x';
       }
       if (isMax20x) {
-        setTimeout(onDone, 0, 'You are already on the highest Max subscription plan. For additional usage, run /login to switch to an API usage-billed account.');
+        setTimeout(onDone, 0, '你已经在最高的 Max 订阅套餐上。如需更多用量，请运行 /login 切换到按 API 用量计费的账号。');
         return null;
       }
     }
     const url = 'https://claude.ai/upgrade/max';
     await openBrowser(url);
-    return <Login startingMessage={'Starting new login following /upgrade. Exit with Ctrl-C to use existing account.'} onDone={success => {
+    return <Login startingMessage={'正在根据 /upgrade 开始新的登录。按 Ctrl-C 可继续使用当前账号。'} onDone={success => {
       context.onChangeAPIKey();
-      onDone(success ? 'Login successful' : 'Login interrupted');
+      onDone(success ? '登录成功' : '登录已中断');
     }} />;
   } catch (error) {
     logError(error as Error);
-    setTimeout(onDone, 0, 'Failed to open browser. Please visit https://claude.ai/upgrade/max to upgrade.');
+    setTimeout(onDone, 0, '打开浏览器失败。请访问 https://claude.ai/upgrade/max 完成升级。');
   }
   return null;
 }

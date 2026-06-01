@@ -1,11 +1,5 @@
 import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages.js'
 import type { Command } from '../commands.js'
-import { isUltrareviewEnabled } from './review/ultrareviewEnabled.js'
-
-// Legal wants the explicit surface name plus a docs link visible before the
-// user triggers, so the description carries "Claude Code on the web" + URL.
-const CCR_TERMS_URL = 'https://code.claude.com/docs/en/claude-code-on-the-web'
-
 const LOCAL_REVIEW_PROMPT = (args: string) => `
       You are an expert code reviewer. Follow these steps:
 
@@ -33,8 +27,8 @@ const LOCAL_REVIEW_PROMPT = (args: string) => `
 const review: Command = {
   type: 'prompt',
   name: 'review',
-  description: 'Review a pull request',
-  progressMessage: 'reviewing pull request',
+  description: '审查 PR',
+  progressMessage: '正在审查 PR',
   contentLength: 0,
   source: 'builtin',
   async getPromptForCommand(args): Promise<ContentBlockParam[]> {
@@ -48,8 +42,9 @@ const review: Command = {
 const ultrareview: Command = {
   type: 'local-jsx',
   name: 'ultrareview',
-  description: `~10–20 min · Finds and verifies bugs in your branch. Runs in Claude Code on the web. See ${CCR_TERMS_URL}`,
-  isEnabled: () => isUltrareviewEnabled(),
+  description: `~10-20 分钟 · 在云端查找并验证当前分支中的问题。`,
+  isEnabled: () => false,
+  isHidden: true,
   load: () => import('./review/ultrareviewCommand.js'),
 }
 

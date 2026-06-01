@@ -65,8 +65,8 @@ You will use the AskUserQuestion to understand what the user wants to automate. 
 - If you think the skill will require arguments, suggest arguments based on what you observed. Make sure you understand what someone would need to provide.
 - If it's not clear, ask if this skill should run inline (in the current conversation) or forked (as a sub-agent with its own context). Forked is better for self-contained tasks that don't need mid-process user input; inline is better when the user wants to steer mid-process.
 - Ask where the skill should be saved. Suggest a default based on context (repo-specific workflows → repo, cross-repo personal workflows → user). Options:
-  - **This repo** (\`.claude/skills/<name>/SKILL.md\`) — for workflows specific to this project
-  - **Personal** (\`~/.claude/skills/<name>/SKILL.md\`) — follows you across all repos
+  - **This repo** (\`.secai/skills/<name>/SKILL.md\`) — for workflows specific to this project
+  - **Personal** (\`~/.secai/skills/<name>/SKILL.md\`) — follows you across all repos
 
 **Round 3: Breaking down each step**
 For each major step, if it's not glaringly obvious, ask:
@@ -99,7 +99,7 @@ name: {{skill-name}}
 description: {{one-line description}}
 allowed-tools:
   {{list of tool permission patterns observed during session}}
-when_to_use: {{detailed description of when Claude should automatically invoke this skill, including trigger phrases and example user messages}}
+when_to_use: {{detailed description of when SecAI should automatically invoke this skill, including trigger phrases and example user messages}}
 argument-hint: "{{hint showing argument placeholders}}"
 arguments:
   {{list of argument names}}
@@ -156,14 +156,10 @@ After writing, tell the user:
 `
 
 export function registerSkillifySkill(): void {
-  if (process.env.USER_TYPE !== 'ant') {
-    return
-  }
-
   registerBundledSkill({
     name: 'skillify',
     description:
-      "Capture this session's repeatable process into a skill. Call at end of the process you want to capture with an optional description.",
+      '将本次会话中的可复用流程沉淀为技能。请在要沉淀的流程结束时调用，可附带可选说明。',
     allowedTools: [
       'Read',
       'Write',
@@ -175,7 +171,7 @@ export function registerSkillifySkill(): void {
     ],
     userInvocable: true,
     disableModelInvocation: true,
-    argumentHint: '[description of the process you want to capture]',
+    argumentHint: '[要沉淀的流程说明]',
     async getPromptForCommand(args, context) {
       const sessionMemory =
         (await getSessionMemoryContent()) ?? 'No session memory available.'

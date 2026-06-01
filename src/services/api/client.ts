@@ -16,6 +16,11 @@ import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
 } from 'src/utils/model/providers.js'
+import {
+  appendSecAILog,
+  applySecAIEnvFromConfig,
+  isSecAIActive,
+} from 'src/services/secai/client.js'
 import { getProxyFetchOptions } from 'src/utils/proxy.js'
 import {
   getIsNonInteractiveSession,
@@ -98,6 +103,8 @@ export async function getAnthropicClient({
   fetchOverride?: ClientOptions['fetch']
   source?: string
 }): Promise<Anthropic> {
+  await applySecAIEnvFromConfig()
+
   const containerId = process.env.CLAUDE_CODE_CONTAINER_ID
   const remoteSessionId = process.env.CLAUDE_CODE_REMOTE_SESSION_ID
   const clientApp = process.env.CLAUDE_AGENT_SDK_CLIENT_APP
@@ -128,11 +135,15 @@ export async function getAnthropicClient({
     defaultHeaders['x-anthropic-additional-protection'] = 'true'
   }
 
-  logForDebugging('[API:auth] OAuth token check starting')
-  await checkAndRefreshOAuthTokenIfNeeded()
-  logForDebugging('[API:auth] OAuth token check complete')
+  const useOAuth = isClaudeAISubscriber() && !isSecAIActive()
 
-  if (!isClaudeAISubscriber()) {
+  if (useOAuth) {
+    logForDebugging('[API:auth] OAuth token check starting')
+    await checkAndRefreshOAuthTokenIfNeeded()
+    logForDebugging('[API:auth] OAuth token check complete')
+  }
+
+  if (!useOAuth) {
     await configureApiKeyHeaders(defaultHeaders, getIsNonInteractiveSession())
   }
 
@@ -298,16 +309,15 @@ export async function getAnthropicClient({
   }
 
   // Determine authentication method based on available tokens
-  const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
-    apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
-    authToken: isClaudeAISubscriber()
-      ? getClaudeAIOAuthTokens()?.accessToken
-      : undefined,
-    // Set baseURL from OAuth config when using staging OAuth
-    ...(process.env.USER_TYPE === 'ant' &&
+  const baseURL =
+    process.env.USER_TYPE === 'ant' &&
     isEnvTruthy(process.env.USE_STAGING_OAUTH)
-      ? { baseURL: getOauthConfig().BASE_API_URL }
-      : {}),
+      ? getOauthConfig().BASE_API_URL
+      : process.env.ANTHROPIC_BASE_URL
+  const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+    apiKey: useOAuth ? null : apiKey || getAnthropicApiKey(),
+    authToken: useOAuth ? getClaudeAIOAuthTokens()?.accessToken : undefined,
+    ...(baseURL ? { baseURL } : {}),
     ...ARGS,
     ...(isDebugToStdErr() && { logger: createStderrLogger() }),
   }
@@ -384,6 +394,76 @@ function buildFetch(
     } catch {
       // never let logging crash the fetch
     }
-    return inner(input, { ...init, headers })
+    if (!isSecAIActive()) {
+      return inner(input, { ...init, headers })
+    }
+
+    let requestURL = ''
+    let requestPath = ''
+    try {
+      requestURL = input instanceof Request ? input.url : String(input)
+      requestPath = new URL(requestURL).pathname
+    } catch {
+      requestURL = 'unknown'
+      requestPath = 'unknown'
+    }
+    const started = Date.now()
+    appendSecAILog('api_fetch_start', {
+      method: init?.method || (input instanceof Request ? input.method : 'GET'),
+      path: requestPath,
+      source: source ?? 'unknown',
+      model: process.env.ANTHROPIC_MODEL,
+    })
+
+    return Promise.resolve(inner(input, { ...init, headers }))
+      .then(response => {
+        appendSecAILog('api_fetch_response', {
+          path: requestPath,
+          status: response.status,
+          ok: response.ok,
+          elapsed_ms: Date.now() - started,
+          content_type: response.headers.get('content-type'),
+        })
+        if (!response.body) {
+          appendSecAILog('api_fetch_no_body', { path: requestPath })
+          return response
+        }
+
+        let chunks = 0
+        let bytes = 0
+        const monitoredBody = response.body.pipeThrough(
+          new TransformStream({
+            transform(chunk, controller) {
+              chunks += 1
+              bytes +=
+                typeof chunk === 'string'
+                  ? Buffer.byteLength(chunk)
+                  : chunk?.byteLength || 0
+              controller.enqueue(chunk)
+            },
+            flush() {
+              appendSecAILog('api_fetch_stream_end', {
+                path: requestPath,
+                elapsed_ms: Date.now() - started,
+                chunks,
+                bytes,
+              })
+            },
+          }),
+        )
+        return new Response(monitoredBody, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        })
+      })
+      .catch(error => {
+        appendSecAILog('api_fetch_error', {
+          path: requestPath,
+          elapsed_ms: Date.now() - started,
+          error: error instanceof Error ? error.message : String(error),
+        })
+        throw error
+      })
   }
 }

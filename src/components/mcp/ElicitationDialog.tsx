@@ -254,7 +254,7 @@ function ElicitationFormDialog({
   // Text fields are always in edit mode when focused — no Enter-to-edit step.
   const isEditingTextField = currentFieldIsText && !focusedButton;
   useRegisterOverlay('elicitation');
-  useNotifyAfterTimeout('Claude Code needs your input', 'elicitation_dialog');
+  useNotifyAfterTimeout('SecAI needs your input', 'elicitation_dialog');
 
   // Sync textInputValue when the focused field changes
   const syncTextInput = useCallback((fieldIndex: number | undefined) => {
@@ -850,7 +850,7 @@ function ElicitationFormDialog({
               valueContent = <Text>
                       {arrow}
                       <Text dimColor italic>
-                        not set
+                        未设置
                       </Text>
                     </Text>;
             }
@@ -892,7 +892,7 @@ function ElicitationFormDialog({
               valueContent = <Text>
                       {arrow_0}
                       <Text dimColor italic>
-                        not set
+                        未设置
                       </Text>
                     </Text>;
             }
@@ -906,21 +906,21 @@ function ElicitationFormDialog({
             valueContent = hasValue ? <Text>
                     {value_3 ? figures.checkboxOn : figures.checkboxOff}
                   </Text> : <Text dimColor italic>
-                    not set
+                    未设置
                   </Text>;
           }
         } else if (isTextField(schema_6)) {
           if (isActive) {
-            valueContent = <TextInput value={textInputValue} onChange={handleTextInputChange} onSubmit={handleTextInputSubmit} placeholder={`Type something\u{2026}`} columns={Math.min(columns - 20, 60)} cursorOffset={textInputCursorOffset} onChangeCursorOffset={setTextInputCursorOffset} focus showCursor />;
+            valueContent = <TextInput value={textInputValue} onChange={handleTextInputChange} onSubmit={handleTextInputSubmit} placeholder={`输入内容\u{2026}`} columns={Math.min(columns - 20, 60)} cursorOffset={textInputCursorOffset} onChangeCursorOffset={setTextInputCursorOffset} focus showCursor />;
           } else {
             const displayValue = hasValue && isDateTimeSchema(schema_6) ? formatDateDisplay(String(value_3), schema_6) : String(value_3);
             valueContent = hasValue ? <Text>{displayValue}</Text> : <Text dimColor italic>
-                    not set
+                    未设置
                   </Text>;
           }
         } else {
           valueContent = hasValue ? <Text>{String(value_3)}</Text> : <Text dimColor italic>
-                  not set
+                  未设置
                 </Text>;
         }
         return <Box key={name_1} flexDirection="column">
@@ -1004,7 +1004,7 @@ function ElicitationURLDialog({
   const phaseRef = useRef<'prompt' | 'waiting'>('prompt');
   const [focusedButton, setFocusedButton] = useState<'accept' | 'decline' | 'open' | 'action' | 'cancel'>('accept');
   const showCancel = waitingState?.showCancel ?? false;
-  useNotifyAfterTimeout('Claude Code needs your input', 'elicitation_url_dialog');
+  useNotifyAfterTimeout('SecAI needs your input', 'elicitation_url_dialog');
   useRegisterOverlay('elicitation-url');
 
   // Keep refs in sync for use in abort handler (avoids re-registering listener)

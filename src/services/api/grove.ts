@@ -139,8 +139,7 @@ export async function updateGroveSettings(
         },
       )
     })
-    // Invalidate memoized settings so the post-toggle confirmation
-    // read in privacy-settings.tsx picks up the new value.
+    // Invalidate memoized settings so the next settings read picks up the new value.
     getGroveSettings.cache.clear?.()
   } catch (err) {
     logError(err)

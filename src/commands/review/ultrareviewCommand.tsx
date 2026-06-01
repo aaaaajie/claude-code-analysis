@@ -20,7 +20,7 @@ async function launchAndDone(args: string, context: Parameters<LocalJSXCommandCa
     // Precondition failures now return specific ContentBlockParam[] above.
     // null only reaches here on teleport failure (PR mode) or non-github
     // repo — both are CCR/repo connectivity issues.
-    onDone('Ultrareview failed to launch the remote session. Check that this is a GitHub repo and try again.', {
+    onDone('Ultrareview 启动远程会话失败。请确认这是 GitHub 仓库后重试。', {
       display: 'system'
     });
   }
@@ -28,25 +28,25 @@ async function launchAndDone(args: string, context: Parameters<LocalJSXCommandCa
 export const call: LocalJSXCommandCall = async (onDone, context, args) => {
   const gate = await checkOverageGate();
   if (gate.kind === 'not-enabled') {
-    onDone('Free ultrareviews used. Enable Extra Usage at https://claude.ai/settings/billing to continue.', {
+    onDone('免费 Ultrareview 次数已用完。请在 https://claude.ai/settings/billing 启用额外用量后继续。', {
       display: 'system'
     });
     return null;
   }
   if (gate.kind === 'low-balance') {
-    onDone(`Balance too low to launch ultrareview ($${gate.available.toFixed(2)} available, $10 minimum). Top up at https://claude.ai/settings/billing`, {
+    onDone(`余额不足，无法启动 Ultrareview（可用 $${gate.available.toFixed(2)}，最低需要 $10）。请在 https://claude.ai/settings/billing 充值`, {
       display: 'system'
     });
     return null;
   }
   if (gate.kind === 'needs-confirm') {
     return <UltrareviewOverageDialog onProceed={async signal => {
-      await launchAndDone(args, context, onDone, ' This review bills as Extra Usage.', signal);
+      await launchAndDone(args, context, onDone, ' 本次审查按额外用量计费。', signal);
       // Only persist the confirmation flag after a non-aborted launch —
       // otherwise Escape-during-launch would leave the flag set and
       // skip this dialog on the next attempt.
       if (!signal.aborted) confirmOverage();
-    }} onCancel={() => onDone('Ultrareview cancelled.', {
+    }} onCancel={() => onDone('已取消 Ultrareview。', {
       display: 'system'
     })} />;
   }

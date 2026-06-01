@@ -113,7 +113,7 @@ function generateReservedShortcuts(): string {
 
 const FILE_FORMAT_EXAMPLE: KeybindingsSchemaType = {
   $schema: 'https://www.schemastore.org/claude-code-keybindings.json',
-  $docs: 'https://code.claude.com/docs/en/keybindings',
+  $docs: 'https://code.secai.com/docs/en/keybindings',
   bindings: [
     {
       context: 'Chat',
@@ -149,11 +149,11 @@ const CHORD_EXAMPLE: KeybindingsSchemaType['bindings'][number] = {
 const SECTION_INTRO = [
   '# Keybindings Skill',
   '',
-  'Create or modify `~/.claude/keybindings.json` to customize keyboard shortcuts.',
+  'Create or modify `~/.secai/keybindings.json` to customize keyboard shortcuts.',
   '',
   '## CRITICAL: Read Before Write',
   '',
-  '**Always read `~/.claude/keybindings.json` first** (it may not exist yet). Merge changes with existing bindings — never replace the entire file.',
+  '**Always read `~/.secai/keybindings.json` first** (it may not exist yet). Merge changes with existing bindings — never replace the entire file.',
   '',
   '- Use **Edit** tool for modifications to existing files',
   '- Use **Write** tool only if the file does not exist yet',
@@ -229,9 +229,9 @@ const SECTION_BEHAVIORAL_RULES = [
 ].join('\n')
 
 const SECTION_DOCTOR = [
-  '## Validation with /doctor',
+  '## Validation',
   '',
-  'The `/doctor` command includes a "Keybinding Configuration Issues" section that validates `~/.claude/keybindings.json`.',
+  'Keybinding warnings are shown as in-app notifications when `~/.secai/keybindings.json` has validation issues.',
   '',
   '### Common Issues and Fixes',
   '',
@@ -276,11 +276,11 @@ const SECTION_DOCTOR = [
     ],
   ),
   '',
-  '### Example /doctor Output',
+  '### Example Validation Output',
   '',
   '```',
   'Keybinding Configuration Issues',
-  'Location: ~/.claude/keybindings.json',
+  'Location: ~/.secai/keybindings.json',
   '  └ [Error] Unknown context "chat"',
   '    → Valid contexts: Global, Chat, Autocomplete, ...',
   '  └ [Warning] "ctrl+c" may not work: Terminal interrupt (SIGINT)',
@@ -293,7 +293,7 @@ export function registerKeybindingsSkill(): void {
   registerBundledSkill({
     name: 'keybindings-help',
     description:
-      'Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: "rebind ctrl+s", "add a chord shortcut", "change the submit key", "customize keybindings".',
+      'Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.secai/keybindings.json. Examples: "rebind ctrl+s", "add a chord shortcut", "change the submit key", "customize keybindings".',
     allowedTools: ['Read'],
     userInvocable: false,
     isEnabled: isKeybindingCustomizationEnabled,

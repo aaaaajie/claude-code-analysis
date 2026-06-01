@@ -1,6 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import { feature } from 'bun:bundle';
-import React, { useContext, useEffect, useEffectEvent, useState, useSyncExternalStore } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { MailboxProvider } from '../context/mailbox.js';
 import { useSettingsChange } from '../hooks/useSettingsChange.js';
 import { logForDebugging } from '../utils/debug.js';
@@ -87,7 +87,7 @@ export function AppStateProvider(t0) {
   } else {
     t4 = $[7];
   }
-  const onSettingsChange = useEffectEvent(t4);
+  const onSettingsChange = useStableEvent(t4);
   useSettingsChange(onSettingsChange);
   let t5;
   if ($[8] !== children) {
@@ -108,6 +108,13 @@ export function AppStateProvider(t0) {
   }
   return t6;
 }
+
+function useStableEvent<T extends (...args: never[]) => unknown>(callback: T): T {
+  const ref = useRef(callback);
+  ref.current = callback;
+  return useMemo(() => ((...args: Parameters<T>) => ref.current(...args)) as T, []);
+}
+
 function _temp(prev) {
   return {
     ...prev,

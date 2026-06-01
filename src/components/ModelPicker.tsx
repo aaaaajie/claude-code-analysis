@@ -1,14 +1,14 @@
 import { c as _c } from "react/compiler-runtime";
-import capitalize from 'lodash-es/capitalize.js';
 import * as React from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useExitOnCtrlCDWithKeybindings } from 'src/hooks/useExitOnCtrlCDWithKeybindings.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, logEvent } from 'src/services/analytics/index.js';
+import { DEFAULT_SECAI_MODEL, isSecAIActive, isSecAIModelPreset } from 'src/services/secai/client.js';
 import { FAST_MODE_MODEL_DISPLAY, isFastModeAvailable, isFastModeCooldown, isFastModeEnabled } from 'src/utils/fastMode.js';
 import { Box, Text } from '../ink.js';
 import { useKeybindings } from '../keybindings/useKeybinding.js';
 import { useAppState, useSetAppState } from '../state/AppState.js';
-import { convertEffortValueToLevel, type EffortLevel, getDefaultEffortForModel, modelSupportsEffort, modelSupportsMaxEffort, resolvePickerEffortPersistence, toPersistableEffort } from '../utils/effort.js';
+import { convertEffortValueToLevel, type EffortLevel, getDefaultEffortForModel, isSecAIEffortModel, modelSupportsEffort, modelSupportsMaxEffort, resolvePickerEffortPersistence, toPersistableEffort } from '../utils/effort.js';
 import { getDefaultMainLoopModel, type ModelSetting, modelDisplayString, parseUserSpecifiedModel } from '../utils/model/model.js';
 import { getModelOptions } from '../utils/model/modelOptions.js';
 import { getSettingsForSource, updateSettingsForSource } from '../utils/settings/settings.js';
@@ -25,13 +25,13 @@ export type Props = {
   onCancel?: () => void;
   isStandaloneCommand?: boolean;
   showFastModeNotice?: boolean;
-  /** Overrides the dim header line below "Select model". */
+  /** 覆盖“选择模型”下方的弱化标题行。 */
   headerText?: string;
   /**
    * When true, skip writing effortLevel to userSettings on selection.
    * Used by the assistant installer wizard where the model choice is
-   * project-scoped (written to the assistant's .claude/settings.json via
-   * install.ts) and should not leak to the user's global ~/.claude/settings.
+   * project-scoped (written to the assistant's .secai/settings.json via
+   * install.ts) and should not leak to the user's global ~/.secai/settings.
    */
   skipSettingsWrite?: boolean;
 };
@@ -50,7 +50,8 @@ export function ModelPicker(t0) {
   } = t0;
   const setAppState = useSetAppState();
   const exitState = useExitOnCtrlCDWithKeybindings();
-  const initialValue = initial === null ? NO_PREFERENCE : initial;
+  const secAIDefaultSelected = isSecAIActive() && initial === DEFAULT_SECAI_MODEL;
+  const initialValue = initial === null || secAIDefaultSelected ? NO_PREFERENCE : initial;
   const [focusedValue, setFocusedValue] = useState(initialValue);
   const isFastMode = useAppState(_temp);
   const [hasToggledEffort, setHasToggledEffort] = useState(false);
@@ -76,7 +77,7 @@ export function ModelPicker(t0) {
   const modelOptions = t3;
   let t4;
   bb0: {
-    if (initial !== null && !modelOptions.some(opt => opt.value === initial)) {
+    if (initial !== null && !secAIDefaultSelected && !modelOptions.some(opt => opt.value === initial) && (!isSecAIActive() || isSecAIModelPreset(initial))) {
       let t5;
       if ($[4] !== initial) {
         t5 = modelDisplayString(initial);
@@ -90,7 +91,7 @@ export function ModelPicker(t0) {
         t6 = {
           value: initial,
           label: t5,
-          description: "Current model"
+          description: "当前模型"
         };
         $[6] = initial;
         $[7] = t5;
@@ -144,10 +145,10 @@ export function ModelPicker(t0) {
     t7 = $[19];
   }
   const focusedModelName = t7;
+  const focusedModel = resolveOptionModel(focusedValue);
   let focusedSupportsEffort;
   let t8;
   if ($[20] !== focusedValue) {
-    const focusedModel = resolveOptionModel(focusedValue);
     focusedSupportsEffort = focusedModel ? modelSupportsEffort(focusedModel) : false;
     t8 = focusedModel ? modelSupportsMaxEffort(focusedModel) : false;
     $[20] = focusedValue;
@@ -189,7 +190,7 @@ export function ModelPicker(t0) {
       if (!focusedSupportsEffort) {
         return;
       }
-      setEffort(prev => cycleEffortLevel(prev ?? focusedDefaultEffort, direction, focusedSupportsMax));
+      setEffort(prev => cycleEffortLevel(prev ?? focusedDefaultEffort, direction, focusedSupportsMax, focusedModel ? isSecAIEffortModel(focusedModel) : false));
       setHasToggledEffort(true);
     };
     $[28] = focusedDefaultEffort;
@@ -260,12 +261,12 @@ export function ModelPicker(t0) {
   const handleSelect = t14;
   let t15;
   if ($[41] === Symbol.for("react.memo_cache_sentinel")) {
-    t15 = <Text color="remember" bold={true}>Select model</Text>;
+    t15 = <Text color="remember" bold={true}>选择模型</Text>;
     $[41] = t15;
   } else {
     t15 = $[41];
   }
-  const t16 = headerText ?? "Switch between Claude models. Applies to this session and future Claude Code sessions. For other/previous model names, specify with --model.";
+  const t16 = headerText ?? "切换模型。会应用到当前会话和之后的 SecAI 会话；其他或旧模型名称可通过 --model 指定。";
   let t17;
   if ($[42] !== t16) {
     t17 = <Text dimColor={true}>{t16}</Text>;
@@ -276,7 +277,7 @@ export function ModelPicker(t0) {
   }
   let t18;
   if ($[44] !== sessionModel) {
-    t18 = sessionModel && <Text dimColor={true}>Currently using {modelDisplayString(sessionModel)} for this session (set by plan mode). Selecting a model will undo this.</Text>;
+    t18 = sessionModel && <Text dimColor={true}>当前会话正在使用 {modelDisplayString(sessionModel)}（由计划模式设置）。选择模型会取消此覆盖。</Text>;
     $[44] = sessionModel;
     $[45] = t18;
   } else {
@@ -308,7 +309,7 @@ export function ModelPicker(t0) {
   }
   let t22;
   if ($[57] !== hiddenCount) {
-    t22 = hiddenCount > 0 && <Box paddingLeft={3}><Text dimColor={true}>and {hiddenCount} more…</Text></Box>;
+    t22 = hiddenCount > 0 && <Box paddingLeft={3}><Text dimColor={true}>还有 {hiddenCount} 个...</Text></Box>;
     $[57] = hiddenCount;
     $[58] = t22;
   } else {
@@ -325,7 +326,7 @@ export function ModelPicker(t0) {
   }
   let t24;
   if ($[62] !== displayEffort || $[63] !== focusedDefaultEffort || $[64] !== focusedModelName || $[65] !== focusedSupportsEffort) {
-    t24 = <Box marginBottom={1} flexDirection="column">{focusedSupportsEffort ? <Text dimColor={true}><EffortLevelIndicator effort={displayEffort} />{" "}{capitalize(displayEffort)} effort{displayEffort === focusedDefaultEffort ? " (default)" : ""}{" "}<Text color="subtle">← → to adjust</Text></Text> : <Text color="subtle"><EffortLevelIndicator effort={undefined} /> Effort not supported{focusedModelName ? ` for ${focusedModelName}` : ""}</Text>}</Box>;
+    t24 = <Box marginBottom={1} flexDirection="column">{focusedSupportsEffort ? <Text dimColor={true}><EffortLevelIndicator effort={displayEffort} />{" "}{formatEffortLabel(displayEffort, focusedModel ? isSecAIEffortModel(focusedModel) : false)} 推理强度{displayEffort === focusedDefaultEffort ? "（默认）" : ""}{" "}<Text color="subtle">← → 调整</Text></Text> : <Text color="subtle"><EffortLevelIndicator effort={undefined} /> 不支持推理强度{focusedModelName ? `：${focusedModelName}` : ""}</Text>}</Box>;
     $[62] = displayEffort;
     $[63] = focusedDefaultEffort;
     $[64] = focusedModelName;
@@ -336,7 +337,7 @@ export function ModelPicker(t0) {
   }
   let t25;
   if ($[67] !== showFastModeNotice) {
-    t25 = isFastModeEnabled() ? showFastModeNotice ? <Box marginBottom={1}><Text dimColor={true}>Fast mode is <Text bold={true}>ON</Text> and available with{" "}{FAST_MODE_MODEL_DISPLAY} only (/fast). Switching to other models turn off fast mode.</Text></Box> : isFastModeAvailable() && !isFastModeCooldown() ? <Box marginBottom={1}><Text dimColor={true}>Use <Text bold={true}>/fast</Text> to turn on Fast mode ({FAST_MODE_MODEL_DISPLAY} only).</Text></Box> : null : null;
+    t25 = isFastModeEnabled() ? showFastModeNotice ? <Box marginBottom={1}><Text dimColor={true}>快速模式已<Text bold={true}>开启</Text>，仅适用于 {FAST_MODE_MODEL_DISPLAY}（/fast）。切换到其他模型会关闭快速模式。</Text></Box> : isFastModeAvailable() && !isFastModeCooldown() ? <Box marginBottom={1}><Text dimColor={true}>使用 <Text bold={true}>/fast</Text> 开启快速模式（仅 {FAST_MODE_MODEL_DISPLAY}）。</Text></Box> : null : null;
     $[67] = showFastModeNotice;
     $[68] = t25;
   } else {
@@ -355,7 +356,7 @@ export function ModelPicker(t0) {
   }
   let t27;
   if ($[74] !== exitState || $[75] !== isStandaloneCommand) {
-    t27 = isStandaloneCommand && <Text dimColor={true} italic={true}>{exitState.pending ? <>Press {exitState.keyName} again to exit</> : <Byline><KeyboardShortcutHint shortcut="Enter" action="confirm" /><ConfigurableShortcutHint action="select:cancel" context="Select" fallback="Esc" description="exit" /></Byline>}</Text>;
+    t27 = isStandaloneCommand && <Text dimColor={true} italic={true}>{exitState.pending ? <>再次按 {exitState.keyName} 退出</> : <Byline><KeyboardShortcutHint shortcut="Enter" action="确认" /><ConfigurableShortcutHint action="select:cancel" context="Select" fallback="Esc" description="退出" /></Byline>}</Text>;
     $[74] = exitState;
     $[75] = isStandaloneCommand;
     $[76] = t27;
@@ -428,8 +429,23 @@ function EffortLevelIndicator(t0) {
   }
   return t4;
 }
-function cycleEffortLevel(current: EffortLevel, direction: 'left' | 'right', includeMax: boolean): EffortLevel {
-  const levels: EffortLevel[] = includeMax ? ['low', 'medium', 'high', 'max'] : ['low', 'medium', 'high'];
+function formatEffortLabel(effort: EffortLevel, isSecAIModel = false): string {
+  if (isSecAIModel) {
+    return effort === 'max' ? '深度' : '标准'
+  }
+  switch (effort) {
+    case 'low':
+      return '低'
+    case 'medium':
+      return '中'
+    case 'high':
+      return '高'
+    case 'max':
+      return '极高'
+  }
+}
+function cycleEffortLevel(current: EffortLevel, direction: 'left' | 'right', includeMax: boolean, isSecAIModel = false): EffortLevel {
+  const levels: EffortLevel[] = isSecAIModel ? ['high', 'max'] : includeMax ? ['low', 'medium', 'high', 'max'] : ['low', 'medium', 'high'];
   // If the current level isn't in the cycle (e.g. 'max' after switching to a
   // non-Opus model), clamp to 'high'.
   const idx = levels.indexOf(current);

@@ -7,6 +7,7 @@ import type { PermissionResult } from 'src/utils/permissions/PermissionResult.js
 import { z } from 'zod/v4'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
 import { queryModelWithStreaming } from '../../services/api/claude.js'
+import { isSecAIActive } from '../../services/secai/client.js'
 import { buildTool, type ToolDef } from '../../Tool.js'
 import { lazySchema } from '../../utils/lazySchema.js'
 import { logError } from '../../utils/log.js'
@@ -38,6 +39,11 @@ const inputSchema = lazySchema(() =>
 type InputSchema = ReturnType<typeof inputSchema>
 
 type Input = z.infer<InputSchema>
+
+type SearchHit = {
+  title: string
+  url: string
+}
 
 const searchResultSchema = lazySchema(() => {
   const searchHitSchema = z.object({
@@ -149,6 +155,282 @@ function makeOutputFromSearchResponse(
   }
 }
 
+async function callSecAIWebSearch(
+  input: Input,
+  signal: AbortSignal,
+  startTime: number,
+  onProgress?: (progress: {
+    toolUseID: string
+    data: WebSearchProgress
+  }) => void,
+): Promise<{ data: Output }> {
+  const hits = await secAIWebSearch(input, signal)
+  onProgress?.({
+    toolUseID: `secai-search-${Date.now()}`,
+    data: {
+      type: 'search_results_received',
+      resultCount: hits.length,
+      query: input.query,
+    },
+  })
+
+  return {
+    data: {
+      query: input.query,
+      results: [
+        {
+          tool_use_id: `secai-search-${Date.now()}`,
+          content: hits,
+        },
+      ],
+      durationSeconds: (performance.now() - startTime) / 1000,
+    },
+  }
+}
+
+async function secAIWebSearch(
+  input: Input,
+  signal: AbortSignal,
+): Promise<SearchHit[]> {
+  const configured = process.env.SECAI_WEB_SEARCH_URL?.trim()
+  const hits = configured
+    ? await searchConfiguredEndpoint(configured, input, signal)
+    : await searchPublicHTML(input, signal)
+  return filterSearchHits(hits, input).slice(0, 8)
+}
+
+async function searchConfiguredEndpoint(
+  endpoint: string,
+  input: Input,
+  signal: AbortSignal,
+): Promise<SearchHit[]> {
+  const url = new URL(endpoint)
+  url.searchParams.set('q', input.query)
+  const response = await fetch(url, {
+    signal,
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) {
+    throw new Error(`SecAI web search endpoint failed: HTTP ${response.status}`)
+  }
+  const payload = (await response.json()) as unknown
+  return searchHitsFromJSON(payload)
+}
+
+function searchHitsFromJSON(payload: unknown): SearchHit[] {
+  const root = payload as
+    | { results?: unknown; content?: unknown; data?: unknown }
+    | unknown[]
+  const items = Array.isArray(root)
+    ? root
+    : Array.isArray(root?.results)
+      ? root.results
+      : Array.isArray(root?.content)
+        ? root.content
+        : Array.isArray(root?.data)
+          ? root.data
+          : []
+
+  return items.flatMap(item => {
+    if (!item || typeof item !== 'object') {
+      return []
+    }
+    const record = item as {
+      title?: unknown
+      name?: unknown
+      url?: unknown
+      link?: unknown
+      href?: unknown
+    }
+    const title = firstString(record.title, record.name)
+    const url = firstString(record.url, record.link, record.href)
+    return title && url ? [{ title, url }] : []
+  })
+}
+
+async function searchDuckDuckGoHTML(
+  input: Input,
+  signal: AbortSignal,
+): Promise<SearchHit[]> {
+  const url = new URL('https://html.duckduckgo.com/html/')
+  url.searchParams.set('q', input.query)
+  const response = await fetch(url, {
+    signal,
+    headers: {
+      Accept: 'text/html',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    },
+  })
+  if (!response.ok) {
+    throw new Error(`DuckDuckGo search failed: HTTP ${response.status}`)
+  }
+  return parseDuckDuckGoHTML(await response.text())
+}
+
+async function searchPublicHTML(
+  input: Input,
+  signal: AbortSignal,
+): Promise<SearchHit[]> {
+  const errors: string[] = []
+  try {
+    const hits = await searchDuckDuckGoHTML(input, signal)
+    if (hits.length > 0) {
+      return hits
+    }
+    errors.push('DuckDuckGo returned no parseable results')
+  } catch (error) {
+    errors.push(`DuckDuckGo: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  try {
+    const hits = await searchBingHTML(input, signal)
+    if (hits.length > 0) {
+      return hits
+    }
+    errors.push('Bing returned no parseable results')
+  } catch (error) {
+    errors.push(`Bing: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  throw new Error(
+    `SecAI web search simulation failed. Configure SECAI_WEB_SEARCH_URL for a stable search backend. ${errors.join('; ')}`,
+  )
+}
+
+async function searchBingHTML(
+  input: Input,
+  signal: AbortSignal,
+): Promise<SearchHit[]> {
+  const url = new URL('https://www.bing.com/search')
+  url.searchParams.set('q', input.query)
+  const response = await fetch(url, {
+    signal,
+    headers: {
+      Accept: 'text/html',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    },
+  })
+  if (!response.ok) {
+    throw new Error(`Bing search failed: HTTP ${response.status}`)
+  }
+  return parseBingHTML(await response.text())
+}
+
+function parseDuckDuckGoHTML(html: string): SearchHit[] {
+  const hits: SearchHit[] = []
+  const linkPattern =
+    /<a\b[^>]*class="[^"]*\bresult__a\b[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g
+  for (const match of html.matchAll(linkPattern)) {
+    const rawURL = decodeHTMLEntities(match[1] ?? '')
+    const title = cleanHTMLText(match[2] ?? '')
+    const url = unwrapDuckDuckGoURL(rawURL)
+    if (title && url) {
+      hits.push({ title, url })
+    }
+    if (hits.length >= 12) {
+      break
+    }
+  }
+  return hits
+}
+
+function parseBingHTML(html: string): SearchHit[] {
+  const hits: SearchHit[] = []
+  const linkPattern =
+    /<li\b[^>]*class="[^"]*\bb_algo\b[^"]*"[\s\S]*?<h2[^>]*>\s*<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g
+  for (const match of html.matchAll(linkPattern)) {
+    const url = decodeHTMLEntities(match[1] ?? '')
+    const title = cleanHTMLText(match[2] ?? '')
+    if (title && url) {
+      hits.push({ title, url })
+    }
+    if (hits.length >= 12) {
+      break
+    }
+  }
+  return hits
+}
+
+function unwrapDuckDuckGoURL(rawURL: string): string {
+  try {
+    const url = new URL(rawURL, 'https://duckduckgo.com')
+    const unwrapped = url.searchParams.get('uddg')
+    return unwrapped || url.toString()
+  } catch {
+    return rawURL
+  }
+}
+
+function filterSearchHits(hits: SearchHit[], input: Input): SearchHit[] {
+  const allowed = input.allowed_domains?.map(domain => domain.toLowerCase())
+  const blocked = input.blocked_domains?.map(domain => domain.toLowerCase())
+  return dedupeSearchHits(
+    hits.filter(hit => {
+      const hostname = hostnameOf(hit.url)
+      if (!hostname) {
+        return false
+      }
+      if (allowed?.length && !allowed.some(domain => hostnameMatches(hostname, domain))) {
+        return false
+      }
+      if (blocked?.some(domain => hostnameMatches(hostname, domain))) {
+        return false
+      }
+      return true
+    }),
+  )
+}
+
+function dedupeSearchHits(hits: SearchHit[]): SearchHit[] {
+  const seen = new Set<string>()
+  return hits.filter(hit => {
+    if (seen.has(hit.url)) {
+      return false
+    }
+    seen.add(hit.url)
+    return true
+  })
+}
+
+function hostnameOf(rawURL: string): string | null {
+  try {
+    return new URL(rawURL).hostname.toLowerCase()
+  } catch {
+    return null
+  }
+}
+
+function hostnameMatches(hostname: string, domain: string): boolean {
+  const normalized = domain.replace(/^\*\./, '').toLowerCase()
+  return hostname === normalized || hostname.endsWith(`.${normalized}`)
+}
+
+function cleanHTMLText(html: string): string {
+  return decodeHTMLEntities(html.replace(/<[^>]+>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function decodeHTMLEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+}
+
+function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim()
+    }
+  }
+  return undefined
+}
+
 export const WebSearchTool = buildTool({
   name: WEB_SEARCH_TOOL_NAME,
   searchHint: 'search the web for current information',
@@ -166,6 +448,9 @@ export const WebSearchTool = buildTool({
     return summary ? `Searching for ${summary}` : 'Searching the web'
   },
   isEnabled() {
+    if (isSecAIActive()) {
+      return true
+    }
     const provider = getAPIProvider()
     const model = getMainLoopModel()
 
@@ -254,6 +539,15 @@ export const WebSearchTool = buildTool({
   async call(input, context, _canUseTool, _parentMessage, onProgress) {
     const startTime = performance.now()
     const { query } = input
+    if (isSecAIActive()) {
+      return callSecAIWebSearch(
+        input,
+        context.abortController.signal,
+        startTime,
+        onProgress,
+      )
+    }
+
     const userMessage = createUserMessage({
       content: 'Perform a web search for the query: ' + query,
     })

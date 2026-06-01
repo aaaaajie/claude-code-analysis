@@ -1,13 +1,12 @@
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
 import { logEvent } from 'src/services/analytics/index.js';
-import { Box, Link, Text } from '../ink.js';
+import { Box, Text } from '../ink.js';
 import { updateSettingsForSource } from '../utils/settings/settings.js';
 import { Select } from './CustomSelect/index.js';
 import { Dialog } from './design-system/Dialog.js';
 
-// NOTE: This copy is legally reviewed — do not modify without Legal team approval.
-export const AUTO_MODE_DESCRIPTION = "Auto mode lets Claude handle permission prompts automatically — Claude checks each tool call for risky actions and prompt injection before executing. Actions Claude identifies as safe are executed, while actions Claude identifies as risky are blocked and Claude may try a different approach. Ideal for long-running tasks. Sessions are slightly more expensive. Claude can make mistakes that allow harmful commands to run, it's recommended to only use in isolated environments. Shift+Tab to change mode.";
+export const AUTO_MODE_DESCRIPTION = "自动模式会在执行前检查工具调用风险，并自动处理可安全执行的权限请求。高风险操作会被阻止，SecAI 会尝试改用其他方案。建议只在隔离环境中使用。可通过 Shift+Tab 切换模式。";
 type Props = {
   onAccept(): void;
   onDecline(): void;
@@ -70,7 +69,7 @@ export function AutoModeOptInDialog(t0) {
   const onChange = t2;
   let t3;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = <Box flexDirection="column" gap={1}><Text>{AUTO_MODE_DESCRIPTION}</Text><Link url="https://code.claude.com/docs/en/security" /></Box>;
+    t3 = <Box flexDirection="column" gap={1}><Text>{AUTO_MODE_DESCRIPTION}</Text></Box>;
     $[4] = t3;
   } else {
     t3 = $[4];
@@ -78,7 +77,7 @@ export function AutoModeOptInDialog(t0) {
   let t4;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = true ? [{
-      label: "Yes, and make it my default mode",
+      label: "是，并设为默认模式",
       value: "accept-default" as const
     }] : [];
     $[5] = t4;
@@ -88,14 +87,14 @@ export function AutoModeOptInDialog(t0) {
   let t5;
   if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
     t5 = {
-      label: "Yes, enable auto mode",
+      label: "是，启用自动模式",
       value: "accept" as const
     };
     $[6] = t5;
   } else {
     t5 = $[6];
   }
-  const t6 = declineExits ? "No, exit" : "No, go back";
+  const t6 = declineExits ? "否，退出" : "否，返回";
   let t7;
   if ($[7] !== t6) {
     t7 = [...t4, t5, {
@@ -127,7 +126,7 @@ export function AutoModeOptInDialog(t0) {
   }
   let t10;
   if ($[15] !== onDecline || $[16] !== t9) {
-    t10 = <Dialog title="Enable auto mode?" color="warning" onCancel={onDecline}>{t3}{t9}</Dialog>;
+    t10 = <Dialog title="启用自动模式？" color="warning" onCancel={onDecline}>{t3}{t9}</Dialog>;
     $[15] = onDecline;
     $[16] = t9;
     $[17] = t10;

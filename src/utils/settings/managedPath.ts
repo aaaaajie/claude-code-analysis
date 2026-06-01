@@ -9,18 +9,18 @@ export const getManagedFilePath = memoize(function (): string {
   // Allow override for testing/demos (Ant-only, eliminated from external builds)
   if (
     process.env.USER_TYPE === 'ant' &&
-    process.env.CLAUDE_CODE_MANAGED_SETTINGS_PATH
+    process.env.SECAI_MANAGED_SETTINGS_PATH
   ) {
-    return process.env.CLAUDE_CODE_MANAGED_SETTINGS_PATH
+    return process.env.SECAI_MANAGED_SETTINGS_PATH
   }
 
   switch (getPlatform()) {
     case 'macos':
-      return '/Library/Application Support/ClaudeCode'
+      return '/Library/Application Support/SecAI'
     case 'windows':
-      return 'C:\\Program Files\\ClaudeCode'
+      return 'C:\\Program Files\\SecAI'
     default:
-      return '/etc/claude-code'
+      return '/etc/secai'
   }
 })
 

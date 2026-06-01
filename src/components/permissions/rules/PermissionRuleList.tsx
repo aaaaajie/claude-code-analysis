@@ -4,8 +4,11 @@ import figures from 'figures';
 import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppState, useSetAppState } from 'src/state/AppState.js';
+import type { ToolPermissionContext } from 'src/Tool.js';
 import { applyPermissionUpdate, persistPermissionUpdate } from 'src/utils/permissions/PermissionUpdate.js';
-import type { PermissionUpdateDestination } from 'src/utils/permissions/PermissionUpdateSchema.js';
+import type { ExternalPermissionMode, PermissionMode } from 'src/types/permissions.js';
+import type { PermissionUpdate, PermissionUpdateDestination } from 'src/utils/permissions/PermissionUpdateSchema.js';
+import { updateSettingsForSource } from 'src/utils/settings/settings.js';
 import type { CommandResultDisplay } from '../../../commands.js';
 import { Select } from '../../../components/CustomSelect/select.js';
 import { useExitOnCtrlCDWithKeybindings } from '../../../hooks/useExitOnCtrlCDWithKeybindings.js';
@@ -30,7 +33,7 @@ import { PermissionRuleInput } from './PermissionRuleInput.js';
 import { RecentDenialsTab } from './RecentDenialsTab.js';
 import { RemoveWorkspaceDirectory } from './RemoveWorkspaceDirectory.js';
 import { WorkspaceTab } from './WorkspaceTab.js';
-type TabType = 'recent' | 'allow' | 'ask' | 'deny' | 'workspace';
+type TabType = 'recent' | 'allow' | 'ask' | 'deny' | 'mode' | 'workspace';
 type RuleSourceTextProps = {
   rule: PermissionRule;
 };
@@ -47,7 +50,7 @@ function RuleSourceText(t0) {
   } else {
     t1 = $[1];
   }
-  const t2 = `From ${t1}`;
+  const t2 = `来源：${t1}`;
   let t3;
   if ($[2] !== t2) {
     t3 = <Text dimColor={true}>{t2}</Text>;
@@ -63,12 +66,83 @@ function RuleSourceText(t0) {
 function getRuleBehaviorLabel(ruleBehavior: PermissionBehavior): string {
   switch (ruleBehavior) {
     case 'allow':
-      return 'allowed';
+      return '允许';
     case 'deny':
-      return 'denied';
+      return '拒绝';
     case 'ask':
-      return 'ask';
+      return '询问';
   }
+}
+
+const PERMISSION_MODE_OPTIONS = [{
+  label: '默认',
+  value: 'default',
+  description: '按规则询问，适合日常使用。'
+}, {
+  label: '自动接受编辑',
+  value: 'acceptEdits',
+  description: '文件编辑自动通过，命令仍按规则确认。'
+}, {
+  label: '全部允许',
+  value: 'bypassPermissions',
+  description: '所有工具调用直接执行，不再弹出权限确认。'
+}, {
+  label: '计划模式',
+  value: 'plan',
+  description: '只分析和规划，不主动修改或执行。'
+}] satisfies Array<{
+  label: string;
+  value: ExternalPermissionMode;
+  description: string;
+}>;
+
+function getPermissionModeDisplay(mode: PermissionMode): string {
+  switch (mode) {
+    case 'default':
+      return '默认';
+    case 'acceptEdits':
+      return '自动接受编辑';
+    case 'bypassPermissions':
+      return '全部允许';
+    case 'plan':
+      return '计划模式';
+    case 'dontAsk':
+      return '不再询问';
+    case 'auto':
+      return '自动';
+    case 'bubble':
+      return '上级决定';
+  }
+}
+
+function getSelectablePermissionMode(mode: PermissionMode): ExternalPermissionMode {
+  return PERMISSION_MODE_OPTIONS.some(option => option.value === mode) ? mode as ExternalPermissionMode : 'default';
+}
+
+type PermissionModeTabProps = {
+  mode: PermissionMode;
+  onModeChange: (mode: ExternalPermissionMode) => void;
+  onCancel: () => void;
+  onHeaderFocusChange?: (focused: boolean) => void;
+};
+
+function PermissionModeTab({
+  mode,
+  onModeChange,
+  onCancel,
+  onHeaderFocusChange
+}: PermissionModeTabProps): React.ReactNode {
+  const tabWidth = useTabsWidth();
+  const {
+    headerFocused,
+    focusHeader
+  } = useTabHeaderFocus();
+  useEffect(() => {
+    onHeaderFocusChange?.(headerFocused);
+  }, [headerFocused, onHeaderFocusChange]);
+  const selectedMode = getSelectablePermissionMode(mode);
+  const currentModeText = getPermissionModeDisplay(mode);
+  return <Box flexDirection="column" width={tabWidth}><Text>当前模式：{currentModeText}</Text><Select options={PERMISSION_MODE_OPTIONS} defaultFocusValue={selectedMode} onChange={onModeChange} onCancel={onCancel} visibleOptionCount={PERMISSION_MODE_OPTIONS.length} isDisabled={headerFocused} onUpFromFirstItem={focusHeader} layout="compact-vertical" /></Box>;
 }
 
 // Component for showing tool details and managing the interactive deletion workflow
@@ -135,7 +209,7 @@ function RuleDetails(t0) {
   const ruleDescription = t6;
   let t7;
   if ($[13] !== exitState.keyName || $[14] !== exitState.pending) {
-    t7 = <Box marginLeft={3}>{exitState.pending ? <Text dimColor={true}>Press {exitState.keyName} again to exit</Text> : <Text dimColor={true}>Esc to cancel</Text>}</Box>;
+    t7 = <Box marginLeft={3}>{exitState.pending ? <Text dimColor={true}>再次按 {exitState.keyName} 退出</Text> : <Text dimColor={true}>Esc 取消</Text>}</Box>;
     $[13] = exitState.keyName;
     $[14] = exitState.pending;
     $[15] = t7;
@@ -146,14 +220,14 @@ function RuleDetails(t0) {
   if (rule.source === "policySettings") {
     let t8;
     if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-      t8 = <Text bold={true} color="permission">Rule details</Text>;
+      t8 = <Text bold={true} color="permission">规则详情</Text>;
       $[16] = t8;
     } else {
       t8 = $[16];
     }
     let t9;
     if ($[17] === Symbol.for("react.memo_cache_sentinel")) {
-      t9 = <Text italic={true}>This rule is configured by managed settings and cannot be modified.{"\n"}Contact your system administrator for more information.</Text>;
+      t9 = <Text italic={true}>此规则由托管设置配置，无法修改。{"\n"}请联系系统管理员了解更多信息。</Text>;
       $[17] = t9;
     } else {
       t9 = $[17];
@@ -187,7 +261,7 @@ function RuleDetails(t0) {
   }
   let t9;
   if ($[25] !== t8) {
-    t9 = <Text bold={true} color="error">Delete {t8} tool?</Text>;
+    t9 = <Text bold={true} color="error">删除{t8}工具规则？</Text>;
     $[25] = t8;
     $[26] = t9;
   } else {
@@ -195,7 +269,7 @@ function RuleDetails(t0) {
   }
   let t10;
   if ($[27] === Symbol.for("react.memo_cache_sentinel")) {
-    t10 = <Text>Are you sure you want to delete this permission rule?</Text>;
+    t10 = <Text>确定要删除这条权限规则吗？</Text>;
     $[27] = t10;
   } else {
     t10 = $[27];
@@ -212,10 +286,10 @@ function RuleDetails(t0) {
   let t12;
   if ($[31] === Symbol.for("react.memo_cache_sentinel")) {
     t12 = [{
-      label: "Yes",
+      label: "是",
       value: "yes"
     }, {
-      label: "No",
+      label: "否",
       value: "no"
     }];
     $[31] = t12;
@@ -388,9 +462,9 @@ function PermissionRulesTab(t0) {
     let t8;
     if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
       t8 = {
-        allow: "Claude Code won't ask before using allowed tools.",
-        ask: "Claude Code will always ask for confirmation before using these tools.",
-        deny: "Claude Code will always reject requests to use denied tools."
+        allow: "SecAI 使用已允许的工具前不会再询问。",
+        ask: "SecAI 使用这些工具前始终会请求确认。",
+        deny: "SecAI 始终会拒绝使用被拒绝的工具。"
       };
       $[10] = t8;
     } else {
@@ -592,6 +666,7 @@ export function PermissionRuleList(t0) {
               return askRulesByKey;
             }
           case "workspace":
+          case "mode":
           case "recent":
             {
               return new Map();
@@ -599,9 +674,9 @@ export function PermissionRuleList(t0) {
         }
       })();
       const options = [];
-      if (tab !== "workspace" && tab !== "recent" && !query) {
+      if (tab !== "workspace" && tab !== "mode" && tab !== "recent" && !query) {
         options.push({
-          label: `Add a new rule${figures.ellipsis}`,
+          label: `添加新规则${figures.ellipsis}`,
           value: "add-new-rule"
         });
       }
@@ -751,12 +826,12 @@ export function PermissionRuleList(t0) {
     t14 = (rules, unreachable) => {
       setValidatedRule(null);
       for (const rule_3 of rules) {
-        setChanges(prev => [...prev, `Added ${rule_3.ruleBehavior} rule ${chalk.bold(permissionRuleValueToString(rule_3.ruleValue))}`]);
+        setChanges(prev => [...prev, `已添加 ${getRuleBehaviorLabel(rule_3.ruleBehavior)} 规则 ${chalk.bold(permissionRuleValueToString(rule_3.ruleValue))}`]);
       }
       if (unreachable && unreachable.length > 0) {
         for (const u of unreachable) {
-          const severity = u.shadowType === "deny" ? "blocked" : "shadowed";
-          setChanges(prev_0 => [...prev_0, chalk.yellow(`${figures.warning} Warning: ${permissionRuleValueToString(u.rule.ruleValue)} is ${severity}`), chalk.dim(`  ${u.reason}`), chalk.dim(`  Fix: ${u.fix}`)]);
+          const severity = u.shadowType === "deny" ? "被阻止" : "被覆盖";
+          setChanges(prev_0 => [...prev_0, chalk.yellow(`${figures.warning} 警告：${permissionRuleValueToString(u.rule.ruleValue)} ${severity}`), chalk.dim(`  ${u.reason}`), chalk.dim(`  修复：${u.fix}`)]);
         }
       }
     };
@@ -802,16 +877,16 @@ export function PermissionRuleList(t0) {
         onRetryDenials?.(commands);
         onExit(undefined, {
           shouldQuery: true,
-          metaMessages: [`Permission granted for: ${commands.join(", ")}. You may now retry ${commands.length === 1 ? "this command" : "these commands"} if you would like.`]
+          metaMessages: [`已授予权限：${commands.join(", ")}。现在可以重试${commands.length === 1 ? "该命令" : "这些命令"}。`]
         });
         return;
       }
       const approvedDenials = denialsFor(s_1.approved);
       if (approvedDenials.length > 0 || changes.length > 0) {
-        const approvedMsg = approvedDenials.length > 0 ? [`Approved ${approvedDenials.map(_temp4).join(", ")}`] : [];
+        const approvedMsg = approvedDenials.length > 0 ? [`已批准 ${approvedDenials.map(_temp4).join(", ")}`] : [];
         onExit([...approvedMsg, ...changes].join("\n"));
       } else {
-        onExit("Permissions dialog dismissed", {
+        onExit("已关闭权限对话框", {
           display: "system"
         });
       }
@@ -824,6 +899,25 @@ export function PermissionRuleList(t0) {
     t18 = $[33];
   }
   const handleRulesCancel = t18;
+  const handleModeChange = useCallback((mode: ExternalPermissionMode) => {
+    const permissionUpdate: PermissionUpdate = {
+      type: "setMode",
+      destination: "userSettings",
+      mode
+    };
+    const updatedContext = applyPermissionUpdate(toolPermissionContext as ToolPermissionContext, permissionUpdate);
+    setAppState(prev => ({
+      ...prev,
+      toolPermissionContext: updatedContext
+    }));
+    persistPermissionUpdate(permissionUpdate);
+    if (mode === "bypassPermissions") {
+      updateSettingsForSource("userSettings", {
+        skipDangerousModePermissionPrompt: true
+      });
+    }
+    setChanges(prev_0 => [...prev_0, `权限模式已切换为 ${chalk.bold(getPermissionModeDisplay(mode))}`]);
+  }, [setAppState, toolPermissionContext]);
   const t19 = isSearchModeActive && !isSearchMode;
   let t20;
   if ($[34] !== t19) {
@@ -870,7 +964,7 @@ export function PermissionRuleList(t0) {
           }));
         }
       });
-      setChanges(prev_2 => [...prev_2, `Deleted ${selectedRule.ruleBehavior} rule ${chalk.bold(permissionRuleValueToString(selectedRule.ruleValue))}`]);
+      setChanges(prev_2 => [...prev_2, `已删除 ${getRuleBehaviorLabel(selectedRule.ruleBehavior)} 规则 ${chalk.bold(permissionRuleValueToString(selectedRule.ruleValue))}`]);
       setSelectedRule(undefined);
     };
     $[36] = getRulesOptions;
@@ -901,7 +995,7 @@ export function PermissionRuleList(t0) {
     }
     return t23;
   }
-  if (addingRuleToTab && addingRuleToTab !== "workspace" && addingRuleToTab !== "recent") {
+  if (addingRuleToTab && addingRuleToTab !== "workspace" && addingRuleToTab !== "mode" && addingRuleToTab !== "recent") {
     let t22;
     if ($[45] !== addingRuleToTab) {
       t22 = <PermissionRuleInput onCancel={handleRuleInputCancel} onSubmit={handleRuleInputSubmit} ruleBehavior={addingRuleToTab} />;
@@ -1067,14 +1161,14 @@ export function PermissionRuleList(t0) {
   const t23 = !isSearchMode;
   let t24;
   if ($[82] === Symbol.for("react.memo_cache_sentinel")) {
-    t24 = <Tab id="recent" title="Recently denied"><RecentDenialsTab onHeaderFocusChange={handleHeaderFocusChange} onStateChange={handleDenialStateChange} /></Tab>;
+    t24 = <Tab id="recent" title="最近拒绝"><RecentDenialsTab onHeaderFocusChange={handleHeaderFocusChange} onStateChange={handleDenialStateChange} /></Tab>;
     $[82] = t24;
   } else {
     t24 = $[82];
   }
   let t25;
   if ($[83] !== sharedRulesProps) {
-    t25 = <Tab id="allow" title="Allow"><PermissionRulesTab tab="allow" {...sharedRulesProps} /></Tab>;
+    t25 = <Tab id="allow" title="允许"><PermissionRulesTab tab="allow" {...sharedRulesProps} /></Tab>;
     $[83] = sharedRulesProps;
     $[84] = t25;
   } else {
@@ -1082,7 +1176,7 @@ export function PermissionRuleList(t0) {
   }
   let t26;
   if ($[85] !== sharedRulesProps) {
-    t26 = <Tab id="ask" title="Ask"><PermissionRulesTab tab="ask" {...sharedRulesProps} /></Tab>;
+    t26 = <Tab id="ask" title="询问"><PermissionRulesTab tab="ask" {...sharedRulesProps} /></Tab>;
     $[85] = sharedRulesProps;
     $[86] = t26;
   } else {
@@ -1090,7 +1184,7 @@ export function PermissionRuleList(t0) {
   }
   let t27;
   if ($[87] !== sharedRulesProps) {
-    t27 = <Tab id="deny" title="Deny"><PermissionRulesTab tab="deny" {...sharedRulesProps} /></Tab>;
+    t27 = <Tab id="deny" title="拒绝"><PermissionRulesTab tab="deny" {...sharedRulesProps} /></Tab>;
     $[87] = sharedRulesProps;
     $[88] = t27;
   } else {
@@ -1098,65 +1192,25 @@ export function PermissionRuleList(t0) {
   }
   let t28;
   if ($[89] === Symbol.for("react.memo_cache_sentinel")) {
-    t28 = <Text>Claude Code can read files in the workspace, and make edits when auto-accept edits is on.</Text>;
+    t28 = <Text>SecAI 可以读取工作区文件，并在开启自动接受编辑时修改文件。</Text>;
     $[89] = t28;
   } else {
     t28 = $[89];
   }
   let t29;
   if ($[90] !== onExit || $[91] !== toolPermissionContext) {
-    t29 = <Tab id="workspace" title="Workspace"><Box flexDirection="column">{t28}<WorkspaceTab onExit={onExit} toolPermissionContext={toolPermissionContext} onRequestAddDirectory={handleRequestAddDirectory} onRequestRemoveDirectory={handleRequestRemoveDirectory} onHeaderFocusChange={handleHeaderFocusChange} /></Box></Tab>;
+    t29 = <Tab id="workspace" title="工作区"><Box flexDirection="column">{t28}<WorkspaceTab onExit={onExit} toolPermissionContext={toolPermissionContext} onRequestAddDirectory={handleRequestAddDirectory} onRequestRemoveDirectory={handleRequestRemoveDirectory} onHeaderFocusChange={handleHeaderFocusChange} /></Box></Tab>;
     $[90] = onExit;
     $[91] = toolPermissionContext;
     $[92] = t29;
   } else {
     t29 = $[92];
   }
-  let t30;
-  if ($[93] !== defaultTab || $[94] !== isHidden || $[95] !== t23 || $[96] !== t25 || $[97] !== t26 || $[98] !== t27 || $[99] !== t29) {
-    t30 = <Tabs title="Permissions:" color="permission" defaultTab={defaultTab} hidden={isHidden} initialHeaderFocused={!hasDenials} navFromContent={t23}>{t24}{t25}{t26}{t27}{t29}</Tabs>;
-    $[93] = defaultTab;
-    $[94] = isHidden;
-    $[95] = t23;
-    $[96] = t25;
-    $[97] = t26;
-    $[98] = t27;
-    $[99] = t29;
-    $[100] = t30;
-  } else {
-    t30 = $[100];
-  }
-  let t31;
-  if ($[101] !== defaultTab || $[102] !== exitState.keyName || $[103] !== exitState.pending || $[104] !== headerFocused || $[105] !== isSearchMode) {
-    t31 = <Box marginTop={1} paddingLeft={1}><Text dimColor={true}>{exitState.pending ? <>Press {exitState.keyName} again to exit</> : headerFocused ? <>←/→ tab switch · ↓ return · Esc cancel</> : isSearchMode ? <>Type to filter · Enter/↓ select · ↑ tabs · Esc clear</> : hasDenials && defaultTab === "recent" ? <>Enter approve · r retry · ↑↓ navigate · ←/→ switch · Esc cancel</> : <>↑↓ navigate · Enter select · Type to search · ←/→ switch · Esc cancel</>}</Text></Box>;
-    $[101] = defaultTab;
-    $[102] = exitState.keyName;
-    $[103] = exitState.pending;
-    $[104] = headerFocused;
-    $[105] = isSearchMode;
-    $[106] = t31;
-  } else {
-    t31 = $[106];
-  }
-  let t32;
-  if ($[107] !== t30 || $[108] !== t31) {
-    t32 = <Pane color="permission">{t30}{t31}</Pane>;
-    $[107] = t30;
-    $[108] = t31;
-    $[109] = t32;
-  } else {
-    t32 = $[109];
-  }
-  let t33;
-  if ($[110] !== handleKeyDown || $[111] !== t32) {
-    t33 = <Box flexDirection="column" onKeyDown={handleKeyDown}>{t32}</Box>;
-    $[110] = handleKeyDown;
-    $[111] = t32;
-    $[112] = t33;
-  } else {
-    t33 = $[112];
-  }
-  return t33;
+  const modeTab = <Tab id="mode" title="模式"><PermissionModeTab mode={toolPermissionContext.mode} onModeChange={handleModeChange} onCancel={handleRulesCancel} onHeaderFocusChange={handleHeaderFocusChange} /></Tab>;
+  const tabs = <Tabs title="权限：" color="permission" defaultTab={defaultTab} hidden={isHidden} initialHeaderFocused={!hasDenials} navFromContent={t23}>{t24}{t25}{t26}{t27}{modeTab}{t29}</Tabs>;
+  const footer = <Box marginTop={1} paddingLeft={1}><Text dimColor={true}>{exitState.pending ? <>再次按 {exitState.keyName} 退出</> : headerFocused ? <>←/→ 切换标签 · ↓ 返回 · Esc 取消</> : isSearchMode ? <>输入以筛选 · Enter/↓ 选择 · ↑ 标签 · Esc 清除</> : hasDenials && defaultTab === "recent" ? <>Enter 批准 · r 重试 · ↑↓ 导航 · ←/→ 切换 · Esc 取消</> : <>↑↓ 导航 · Enter 选择 · 输入以搜索 · ←/→ 切换 · Esc 取消</>}</Text></Box>;
+  const pane = <Pane color="permission">{tabs}{footer}</Pane>;
+  return <Box flexDirection="column" onKeyDown={handleKeyDown}>{pane}</Box>;
 }
 function _temp6(opt_0) {
   return opt_0.value;

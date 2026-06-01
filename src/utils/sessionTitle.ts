@@ -16,6 +16,7 @@ import { z } from 'zod/v4'
 import { getIsNonInteractiveSession } from '../bootstrap/state.js'
 import { logEvent } from '../services/analytics/index.js'
 import { queryHaiku } from '../services/api/claude.js'
+import { appendSecAILog, isSecAIActive } from '../services/secai/client.js'
 import type { Message } from '../types/message.js'
 import { logForDebugging } from './debug.js'
 import { safeParseJSON } from './json.js'
@@ -82,6 +83,10 @@ export async function generateSessionTitle(
 ): Promise<string | null> {
   const trimmed = description.trim()
   if (!trimmed) return null
+  if (isSecAIActive()) {
+    appendSecAILog('session_title_skipped')
+    return null
+  }
 
   try {
     const result = await queryHaiku({

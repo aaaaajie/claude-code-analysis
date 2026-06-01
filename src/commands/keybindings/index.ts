@@ -3,8 +3,9 @@ import { isKeybindingCustomizationEnabled } from '../../keybindings/loadUserBind
 
 const keybindings = {
   name: 'keybindings',
-  description: 'Open or create your keybindings configuration file',
+  description: '打开或创建快捷键配置文件',
   isEnabled: () => isKeybindingCustomizationEnabled(),
+  isHidden: true,
   supportsNonInteractive: false,
   type: 'local',
   load: () => import('./keybindings.js'),

@@ -466,10 +466,8 @@ function buildClaudeMdMessage(): Anthropic.MessageParam | null {
       {
         type: 'text',
         text:
-          `The following is the user's CLAUDE.md configuration. These are ` +
-          `instructions the user provided to the agent and should be treated ` +
-          `as part of the user's intent when evaluating actions.\n\n` +
-          `<user_claude_md>\n${claudeMd}\n</user_claude_md>`,
+          `以下是用户提供给 SecAI 的记忆和项目指令。评估操作权限时，应将这些内容视为用户意图的一部分。\n\n` +
+          `<user_memory>\n${claudeMd}\n</user_memory>`,
         cache_control: getCacheControl({ querySource: 'auto_mode' }),
       },
     ],

@@ -1,8 +1,4 @@
 import type { BetaUsage } from '@anthropic-ai/sdk/resources/beta/messages/messages.mjs'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
-import { shouldIncludeFirstPartyOnlyBetas } from './betas.js'
-import { isEnvTruthy } from './envUtils.js'
-import { getInitialSettings } from './settings/settings.js'
 
 // The SDK does not yet have types for advisor blocks.
 // TODO(hackyon): Migrate to the real anthropic SDK types when this feature ships publicly
@@ -43,45 +39,18 @@ export function isAdvisorBlock(param: {
   )
 }
 
-type AdvisorConfig = {
-  enabled?: boolean
-  canUserConfigure?: boolean
-  baseModel?: string
-  advisorModel?: string
-}
-
-function getAdvisorConfig(): AdvisorConfig {
-  return getFeatureValue_CACHED_MAY_BE_STALE<AdvisorConfig>(
-    'tengu_sage_compass',
-    {},
-  )
-}
-
 export function isAdvisorEnabled(): boolean {
-  if (isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_ADVISOR_TOOL)) {
-    return false
-  }
-  // The advisor beta header is first-party only (Bedrock/Vertex 400 on it).
-  if (!shouldIncludeFirstPartyOnlyBetas()) {
-    return false
-  }
-  return getAdvisorConfig().enabled ?? false
+  return false
 }
 
 export function canUserConfigureAdvisor(): boolean {
-  return isAdvisorEnabled() && (getAdvisorConfig().canUserConfigure ?? false)
+  return false
 }
 
 export function getExperimentAdvisorModels():
   | { baseModel: string; advisorModel: string }
   | undefined {
-  const config = getAdvisorConfig()
-  return isAdvisorEnabled() &&
-    !canUserConfigureAdvisor() &&
-    config.baseModel &&
-    config.advisorModel
-    ? { baseModel: config.baseModel, advisorModel: config.advisorModel }
-    : undefined
+  return undefined
 }
 
 // @[MODEL LAUNCH]: Add the new model if it supports the advisor tool.
@@ -106,10 +75,7 @@ export function isValidAdvisorModel(model: string): boolean {
 }
 
 export function getInitialAdvisorSetting(): string | undefined {
-  if (!isAdvisorEnabled()) {
-    return undefined
-  }
-  return getInitialSettings().advisorModel
+  return undefined
 }
 
 export function getAdvisorUsage(

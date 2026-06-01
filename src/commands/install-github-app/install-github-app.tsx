@@ -502,7 +502,7 @@ function InstallGitHubApp(props: {
   };
   const handleWorkflowAction = async (action: 'update' | 'skip' | 'exit') => {
     if (action === 'exit') {
-      props.onDone('Installation cancelled by user');
+      props.onDone('用户已取消安装');
       return;
     }
     logEvent('tengu_install_github_app_step_completed', {

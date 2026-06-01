@@ -13,7 +13,7 @@ export async function fetchAndStoreClaudeCodeFirstTokenDate(): Promise<void> {
   try {
     const config = getGlobalConfig()
 
-    if (config.claudeCodeFirstTokenDate !== undefined) {
+    if (config.secaiCodeFirstTokenDate !== undefined) {
       return
     }
 

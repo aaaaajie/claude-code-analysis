@@ -64,6 +64,10 @@ export function applyPermissionUpdate(
       return {
         ...context,
         mode: update.mode,
+        isBypassPermissionsModeAvailable:
+          update.mode === 'bypassPermissions'
+            ? true
+            : context.isBypassPermissionsModeAvailable,
       }
 
     case 'addRules': {

@@ -24,6 +24,13 @@ import { formatModelPricing, getOpus46CostTier } from '../modelCost.js'
 import { getSettings_DEPRECATED } from '../settings/settings.js'
 import type { PermissionMode } from '../permissions/PermissionMode.js'
 import { getAPIProvider } from './providers.js'
+import {
+  DEFAULT_SECAI_MODEL,
+  applySecAIEnvFromConfigSync,
+  getSecAIModelDisplayName,
+  isSecAIActive,
+  isSecAIModelPreset,
+} from '../../services/secai/client.js'
 import { LIGHTNING_BOLT } from '../../constants/figures.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
@@ -59,6 +66,8 @@ export function isNonCustomOpusModel(model: ModelName): boolean {
  * 4. Settings (from user's saved settings)
  */
 export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
+  applySecAIEnvFromConfigSync()
+
   let specifiedModel: ModelSetting | undefined
 
   const modelOverride = getMainLoopModelOverride()
@@ -67,6 +76,16 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
   } else {
     const settings = getSettings_DEPRECATED() || {}
     specifiedModel = process.env.ANTHROPIC_MODEL || settings.model || undefined
+  }
+
+  if (isSecAIActive()) {
+    if (specifiedModel === null) {
+      return null
+    }
+    if (specifiedModel && isSecAIModelPreset(specifiedModel)) {
+      return specifiedModel
+    }
+    return DEFAULT_SECAI_MODEL
   }
 
   // Ignore the user-specified model if it's not in the availableModels allowlist.
@@ -176,6 +195,10 @@ export function getRuntimeMainLoopModel(params: {
  * @returns The default model setting to use
  */
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
+  if (isSecAIActive()) {
+    return DEFAULT_SECAI_MODEL
+  }
+
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
   if (process.env.USER_TYPE === 'ant') {
     return (
@@ -211,7 +234,7 @@ export function getDefaultMainLoopModel(): ModelName {
 /**
  * Pure string-match that strips date/provider suffixes from a first-party model
  * name. Input must already be a 1P-format ID (e.g. 'claude-3-7-sonnet-20250219',
- * 'us.anthropic.claude-opus-4-6-v1:0'). Does not touch settings, so safe at
+ * 'us.anthropic.secai-opus-4-6-v1:0'). Does not touch settings, so safe at
  * module top-level (see MODEL_COSTS in modelCost.ts).
  */
 export function firstPartyNameToCanonical(name: ModelName): ModelShortName {
@@ -271,7 +294,7 @@ export function firstPartyNameToCanonical(name: ModelName): ModelShortName {
 
 /**
  * Maps a full model string to a shorter canonical version that's unified across 1P and 3P providers.
- * For example, 'claude-3-5-haiku-20241022' and 'us.anthropic.claude-3-5-haiku-20241022-v1:0'
+ * For example, 'claude-3-5-haiku-20241022' and 'us.anthropic.secai-3-5-haiku-20241022-v1:0'
  * would both be mapped to 'claude-3-5-haiku'.
  * @param fullModelName The full model name (e.g., 'claude-3-5-haiku-20241022')
  * @returns The short name (e.g., 'claude-3-5-haiku') if found, or the original name if no mapping exists
@@ -347,6 +370,11 @@ export function renderModelSetting(setting: ModelName | ModelAlias): string {
  * if the model is not recognized as a public model.
  */
 export function getPublicModelDisplayName(model: ModelName): string | null {
+  const secAIName = getSecAIModelDisplayName(model)
+  if (secAIName) {
+    return secAIName
+  }
+
   switch (model) {
     case getModelStrings().opus46:
       return 'Opus 4.6'
@@ -425,7 +453,7 @@ export function renderModelName(model: ModelName): string {
 export function getPublicModelName(model: ModelName): string {
   const publicName = getPublicModelDisplayName(model)
   if (publicName) {
-    return `Claude ${publicName}`
+    return getSecAIModelDisplayName(model) ? publicName : `Claude ${publicName}`
   }
   return `Claude (${model})`
 }
@@ -555,6 +583,9 @@ export function isLegacyModelRemapEnabled(): boolean {
 
 export function modelDisplayString(model: ModelSetting): string {
   if (model === null) {
+    if (isSecAIActive()) {
+      return `默认（${DEFAULT_SECAI_MODEL}）`
+    }
     if (process.env.USER_TYPE === 'ant') {
       return `Default for Ants (${renderDefaultModelSetting(getDefaultMainLoopModelSetting())})`
     } else if (isClaudeAISubscriber()) {

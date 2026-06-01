@@ -336,8 +336,11 @@ export const FileWriteTool = buildTool({
       limit: undefined,
     })
 
-    // Log when writing to CLAUDE.md
-    if (fullFilePath.endsWith(`${sep}CLAUDE.md`)) {
+    // Log when writing to SecAI memory.
+    if (
+      fullFilePath.endsWith(`${sep}SECAI.md`) ||
+      fullFilePath.endsWith(`${sep}AGENTS.md`)
+    ) {
       logEvent('tengu_write_claudemd', {})
     }
 

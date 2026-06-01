@@ -25,7 +25,7 @@ export async function call(
   // Teammates cannot set their own color
   if (isTeammate()) {
     onDone(
-      'Cannot set color: This session is a swarm teammate. Teammate colors are assigned by the team leader.',
+      '无法设置颜色：当前会话是团队成员会话，成员颜色由主会话分配。',
       { display: 'system' },
     )
     return null
@@ -33,7 +33,7 @@ export async function call(
 
   if (!args || args.trim() === '') {
     const colorList = AGENT_COLORS.join(', ')
-    onDone(`Please provide a color. Available colors: ${colorList}, default`, {
+    onDone(`请提供颜色。可用颜色：${colorList}, default`, {
       display: 'system',
     })
     return null
@@ -59,14 +59,14 @@ export async function call(
       },
     }))
 
-    onDone('Session color reset to default', { display: 'system' })
+    onDone('会话颜色已重置为默认值', { display: 'system' })
     return null
   }
 
   if (!AGENT_COLORS.includes(colorArg as AgentColorName)) {
     const colorList = AGENT_COLORS.join(', ')
     onDone(
-      `Invalid color "${colorArg}". Available colors: ${colorList}, default`,
+      `颜色 "${colorArg}" 无效。可用颜色：${colorList}, default`,
       { display: 'system' },
     )
     return null
@@ -88,6 +88,6 @@ export async function call(
     },
   }))
 
-  onDone(`Session color set to: ${colorArg}`, { display: 'system' })
+  onDone(`会话颜色已设置为：${colorArg}`, { display: 'system' })
   return null
 }

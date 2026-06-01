@@ -3,13 +3,14 @@ import type { Command } from '../commands.js';
 import { AGENT_TOOL_NAME } from '../tools/AgentTool/constants.js';
 const statusline = {
   type: 'prompt',
-  description: "Set up Claude Code's status line UI",
+  description: "设置 SecAI 状态栏界面",
   contentLength: 0,
   // Dynamic content
   aliases: [],
   name: 'statusline',
-  progressMessage: 'setting up statusLine',
-  allowedTools: [AGENT_TOOL_NAME, 'Read(~/**)', 'Edit(~/.claude/settings.json)'],
+  isHidden: true,
+  progressMessage: '正在设置状态栏',
+  allowedTools: [AGENT_TOOL_NAME, 'Read(~/**)', 'Edit(~/.secai/settings.json)'],
   source: 'builtin',
   disableNonInteractive: true,
   async getPromptForCommand(args): Promise<ContentBlockParam[]> {

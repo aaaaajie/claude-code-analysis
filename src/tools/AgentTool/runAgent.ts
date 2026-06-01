@@ -391,10 +391,13 @@ export async function* runAgent({
     agentDefinition.omitClaudeMd &&
     !override?.userContext &&
     getFeatureValue_CACHED_MAY_BE_STALE('tengu_slim_subagent_claudemd', true)
-  const { claudeMd: _omittedClaudeMd, ...userContextNoClaudeMd } =
-    baseUserContext
+  const {
+    claudeMd: _omittedClaudeMd,
+    secaiMd: _omittedSecaiMd,
+    ...userContextNoMemory
+  } = baseUserContext
   const resolvedUserContext = shouldOmitClaudeMd
-    ? userContextNoClaudeMd
+    ? userContextNoMemory
     : baseUserContext
 
   // Explore/Plan are read-only search agents — the parent-session-start

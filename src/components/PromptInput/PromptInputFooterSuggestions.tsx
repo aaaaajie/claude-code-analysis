@@ -34,6 +34,18 @@ function getIcon(itemId: string): string {
 function isUnifiedSuggestion(itemId: string): boolean {
   return itemId.startsWith('file-') || itemId.startsWith('mcp-resource-') || itemId.startsWith('agent-');
 }
+function localizeSuggestionDescription(description?: string): string | undefined {
+  switch (description) {
+    case 'directory':
+      return '目录'
+    case 'file':
+      return '文件'
+    case 'agent':
+      return '智能体'
+    default:
+      return description
+  }
+}
 const SuggestionItemRow = memo(function SuggestionItemRow(t0) {
   const $ = _c(36);
   const {
@@ -42,6 +54,7 @@ const SuggestionItemRow = memo(function SuggestionItemRow(t0) {
     isSelected
   } = t0;
   const columns = useTerminalSize().columns;
+  const itemDescription = localizeSuggestionDescription(item.description);
   const isUnified = isUnifiedSuggestion(item.id);
   if (isUnified) {
     let t1;
@@ -57,12 +70,12 @@ const SuggestionItemRow = memo(function SuggestionItemRow(t0) {
     const dimColor = !isSelected;
     const isFile = item.id.startsWith("file-");
     const isMcpResource = item.id.startsWith("mcp-resource-");
-    const separatorWidth = item.description ? 3 : 0;
+    const separatorWidth = itemDescription ? 3 : 0;
     let displayText;
     if (isFile) {
       let t2;
       if ($[2] !== item.description) {
-        t2 = item.description ? Math.min(20, stringWidth(item.description)) : 0;
+        t2 = itemDescription ? Math.min(20, stringWidth(itemDescription)) : 0;
         $[2] = item.description;
         $[3] = t2;
       } else {
@@ -97,11 +110,11 @@ const SuggestionItemRow = memo(function SuggestionItemRow(t0) {
     }
     const availableWidth = columns - 2 - stringWidth(displayText) - separatorWidth - 4;
     let lineContent;
-    if (item.description) {
+    if (itemDescription) {
       const maxDescLength = Math.max(0, availableWidth);
       let t2;
       if ($[9] !== item.description || $[10] !== maxDescLength) {
-        t2 = truncateToWidth(item.description.replace(/\s+/g, " "), maxDescLength);
+        t2 = truncateToWidth(itemDescription.replace(/\s+/g, " "), maxDescLength);
         $[9] = item.description;
         $[10] = maxDescLength;
         $[11] = t2;
@@ -149,7 +162,7 @@ const SuggestionItemRow = memo(function SuggestionItemRow(t0) {
   const descriptionWidth = Math.max(0, columns - displayTextWidth - tagWidth - 4);
   let t1;
   if ($[19] !== descriptionWidth || $[20] !== item.description) {
-    t1 = item.description ? truncateToWidth(item.description.replace(/\s+/g, " "), descriptionWidth) : "";
+    t1 = itemDescription ? truncateToWidth(itemDescription.replace(/\s+/g, " "), descriptionWidth) : "";
     $[19] = descriptionWidth;
     $[20] = item.description;
     $[21] = t1;

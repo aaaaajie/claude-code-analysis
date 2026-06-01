@@ -1,6 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
-import { Box, color, Link, Text, useTheme } from '../../ink.js';
+import { Box, color, Text, useTheme } from '../../ink.js';
 import { useKeybindings } from '../../keybindings/useKeybinding.js';
 import type { CommandResultDisplay } from '../../types/command.js';
 import type { SandboxDependencyCheck } from '../../utils/sandbox/sandbox-adapter.js';
@@ -51,14 +51,14 @@ export function SandboxSettings(t0) {
   const currentMode = getCurrentMode();
   let t2;
   if ($[1] !== theme) {
-    t2 = color("success", theme)("(current)");
+    t2 = color("success", theme)("（当前）");
     $[1] = theme;
     $[2] = t2;
   } else {
     t2 = $[2];
   }
   const currentIndicator = t2;
-  const t3 = currentMode === "auto-allow" ? `Sandbox BashTool, with auto-allow ${currentIndicator}` : "Sandbox BashTool, with auto-allow";
+  const t3 = currentMode === "auto-allow" ? `沙盒 BashTool，自动允许 ${currentIndicator}` : "沙盒 BashTool，自动允许";
   let t4;
   if ($[3] !== t3) {
     t4 = {
@@ -70,7 +70,7 @@ export function SandboxSettings(t0) {
   } else {
     t4 = $[4];
   }
-  const t5 = currentMode === "regular" ? `Sandbox BashTool, with regular permissions ${currentIndicator}` : "Sandbox BashTool, with regular permissions";
+  const t5 = currentMode === "regular" ? `沙盒 BashTool，使用常规权限 ${currentIndicator}` : "沙盒 BashTool，使用常规权限";
   let t6;
   if ($[5] !== t5) {
     t6 = {
@@ -82,7 +82,7 @@ export function SandboxSettings(t0) {
   } else {
     t6 = $[6];
   }
-  const t7 = currentMode === "disabled" ? `No Sandbox ${currentIndicator}` : "No Sandbox";
+  const t7 = currentMode === "disabled" ? `不使用沙盒 ${currentIndicator}` : "不使用沙盒";
   let t8;
   if ($[7] !== t7) {
     t8 = {
@@ -116,7 +116,7 @@ export function SandboxSettings(t0) {
               enabled: true,
               autoAllowBashIfSandboxed: true
             });
-            onComplete("\u2713 Sandbox enabled with auto-allow for bash commands");
+            onComplete("\u2713 已启用沙盒，并自动允许 bash 命令");
             break bb33;
           }
         case "regular":
@@ -125,7 +125,7 @@ export function SandboxSettings(t0) {
               enabled: true,
               autoAllowBashIfSandboxed: false
             });
-            onComplete("\u2713 Sandbox enabled with regular bash permissions");
+            onComplete("\u2713 已启用沙盒，使用常规 bash 权限");
             break bb33;
           }
         case "disabled":
@@ -134,7 +134,7 @@ export function SandboxSettings(t0) {
               enabled: false,
               autoAllowBashIfSandboxed: false
             });
-            onComplete("\u25CB Sandbox disabled");
+            onComplete("\u25CB 已禁用沙盒");
           }
       }
     };
@@ -168,7 +168,7 @@ export function SandboxSettings(t0) {
   useKeybindings(t11, t12);
   let t13;
   if ($[18] !== handleSelect || $[19] !== onComplete || $[20] !== options || $[21] !== showSocketWarning) {
-    t13 = <Tab key="mode" title="Mode"><SandboxModeTab showSocketWarning={showSocketWarning} options={options} onSelect={handleSelect} onComplete={onComplete} /></Tab>;
+    t13 = <Tab key="mode" title="模式"><SandboxModeTab showSocketWarning={showSocketWarning} options={options} onSelect={handleSelect} onComplete={onComplete} /></Tab>;
     $[18] = handleSelect;
     $[19] = onComplete;
     $[20] = options;
@@ -180,7 +180,7 @@ export function SandboxSettings(t0) {
   const modeTab = t13;
   let t14;
   if ($[23] !== onComplete) {
-    t14 = <Tab key="overrides" title="Overrides"><SandboxOverridesTab onComplete={onComplete} /></Tab>;
+    t14 = <Tab key="overrides" title="覆盖设置"><SandboxOverridesTab onComplete={onComplete} /></Tab>;
     $[23] = onComplete;
     $[24] = t14;
   } else {
@@ -189,7 +189,7 @@ export function SandboxSettings(t0) {
   const overridesTab = t14;
   let t15;
   if ($[25] === Symbol.for("react.memo_cache_sentinel")) {
-    t15 = <Tab key="config" title="Config"><SandboxConfigTab /></Tab>;
+    t15 = <Tab key="config" title="配置"><SandboxConfigTab /></Tab>;
     $[25] = t15;
   } else {
     t15 = $[25];
@@ -198,7 +198,7 @@ export function SandboxSettings(t0) {
   const hasErrors = depCheck.errors.length > 0;
   let t16;
   if ($[26] !== depCheck || $[27] !== hasErrors || $[28] !== hasWarnings || $[29] !== modeTab || $[30] !== overridesTab) {
-    t16 = hasErrors ? [<Tab key="dependencies" title="Dependencies"><SandboxDependenciesTab depCheck={depCheck} /></Tab>] : [modeTab, ...(hasWarnings ? [<Tab key="dependencies" title="Dependencies"><SandboxDependenciesTab depCheck={depCheck} /></Tab>] : []), overridesTab, configTab];
+    t16 = hasErrors ? [<Tab key="dependencies" title="依赖"><SandboxDependenciesTab depCheck={depCheck} /></Tab>] : [modeTab, ...(hasWarnings ? [<Tab key="dependencies" title="依赖"><SandboxDependenciesTab depCheck={depCheck} /></Tab>] : []), overridesTab, configTab];
     $[26] = depCheck;
     $[27] = hasErrors;
     $[28] = hasWarnings;
@@ -211,7 +211,7 @@ export function SandboxSettings(t0) {
   const tabs = t16;
   let t17;
   if ($[32] !== tabs) {
-    t17 = <Pane color="permission"><Tabs title="Sandbox:" color="permission" defaultTab="Mode">{tabs}</Tabs></Pane>;
+    t17 = <Pane color="permission"><Tabs title="沙盒：" color="permission" defaultTab="模式">{tabs}</Tabs></Pane>;
     $[32] = tabs;
     $[33] = t17;
   } else {
@@ -233,7 +233,7 @@ function SandboxModeTab(t0) {
   } = useTabHeaderFocus();
   let t1;
   if ($[0] !== showSocketWarning) {
-    t1 = showSocketWarning && <Box marginBottom={1}><Text color="warning">Cannot block unix domain sockets (see Dependencies tab)</Text></Box>;
+    t1 = showSocketWarning && <Box marginBottom={1}><Text color="warning">无法阻止 Unix 域套接字（见“依赖”标签）</Text></Box>;
     $[0] = showSocketWarning;
     $[1] = t1;
   } else {
@@ -241,7 +241,7 @@ function SandboxModeTab(t0) {
   }
   let t2;
   if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Box marginBottom={1}><Text bold={true}>Configure Mode:</Text></Box>;
+    t2 = <Box marginBottom={1}><Text bold={true}>配置模式：</Text></Box>;
     $[2] = t2;
   } else {
     t2 = $[2];
@@ -270,14 +270,14 @@ function SandboxModeTab(t0) {
   }
   let t5;
   if ($[11] === Symbol.for("react.memo_cache_sentinel")) {
-    t5 = <Text dimColor={true}><Text bold={true} dimColor={true}>Auto-allow mode:</Text>{" "}Commands will try to run in the sandbox automatically, and attempts to run outside of the sandbox fallback to regular permissions. Explicit ask/deny rules are always respected.</Text>;
+    t5 = <Text dimColor={true}><Text bold={true} dimColor={true}>自动允许模式：</Text>{" "}命令会自动尝试在沙盒中运行；如果需要在沙盒外运行，则回退到常规权限。显式的询问/拒绝规则始终生效。</Text>;
     $[11] = t5;
   } else {
     t5 = $[11];
   }
   let t6;
   if ($[12] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Box flexDirection="column" marginTop={1} gap={1}>{t5}<Text dimColor={true}>Learn more:{" "}<Link url="https://code.claude.com/docs/en/sandboxing">code.claude.com/docs/en/sandboxing</Link></Text></Box>;
+    t6 = <Box flexDirection="column" marginTop={1} gap={1}>{t5}</Box>;
     $[12] = t6;
   } else {
     t6 = $[12];

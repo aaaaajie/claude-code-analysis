@@ -1,6 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 import React from 'react';
-import { Box, color, Link, Text, useTheme } from '../../ink.js';
+import { Box, color, Text, useTheme } from '../../ink.js';
 import type { CommandResultDisplay } from '../../types/command.js';
 import { SandboxManager } from '../../utils/sandbox/sandbox-adapter.js';
 import { Select } from '../CustomSelect/select.js';
@@ -22,7 +22,7 @@ export function SandboxOverridesTab(t0) {
   if (!isEnabled) {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t1 = <Box flexDirection="column" paddingY={1}><Text color="subtle">Sandbox is not enabled. Enable sandbox to configure override settings.</Text></Box>;
+      t1 = <Box flexDirection="column" paddingY={1}><Text color="subtle">沙盒未启用。启用沙盒后才能配置覆盖设置。</Text></Box>;
       $[0] = t1;
     } else {
       t1 = $[0];
@@ -32,14 +32,14 @@ export function SandboxOverridesTab(t0) {
   if (isLocked) {
     let t1;
     if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
-      t1 = <Text color="subtle">Override settings are managed by a higher-priority configuration and cannot be changed locally.</Text>;
+      t1 = <Text color="subtle">覆盖设置由更高优先级的配置管理，无法在本地更改。</Text>;
       $[1] = t1;
     } else {
       t1 = $[1];
     }
     let t2;
     if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
-      t2 = <Box flexDirection="column" paddingY={1}>{t1}<Box marginTop={1}><Text dimColor={true}>Current setting:{" "}{currentAllowUnsandboxed ? "Allow unsandboxed fallback" : "Strict sandbox mode"}</Text></Box></Box>;
+      t2 = <Box flexDirection="column" paddingY={1}>{t1}<Box marginTop={1}><Text dimColor={true}>当前设置：{" "}{currentAllowUnsandboxed ? "允许非沙盒回退" : "严格沙盒模式"}</Text></Box></Box>;
       $[2] = t2;
     } else {
       t2 = $[2];
@@ -73,14 +73,14 @@ function OverridesSelect(t0) {
   } = useTabHeaderFocus();
   let t1;
   if ($[0] !== theme) {
-    t1 = color("success", theme)("(current)");
+    t1 = color("success", theme)("（当前）");
     $[0] = theme;
     $[1] = t1;
   } else {
     t1 = $[1];
   }
   const currentIndicator = t1;
-  const t2 = currentMode === "open" ? `Allow unsandboxed fallback ${currentIndicator}` : "Allow unsandboxed fallback";
+  const t2 = currentMode === "open" ? `允许非沙盒回退 ${currentIndicator}` : "允许非沙盒回退";
   let t3;
   if ($[2] !== t2) {
     t3 = {
@@ -92,7 +92,7 @@ function OverridesSelect(t0) {
   } else {
     t3 = $[3];
   }
-  const t4 = currentMode === "closed" ? `Strict sandbox mode ${currentIndicator}` : "Strict sandbox mode";
+  const t4 = currentMode === "closed" ? `严格沙盒模式 ${currentIndicator}` : "严格沙盒模式";
   let t5;
   if ($[4] !== t4) {
     t5 = {
@@ -121,7 +121,7 @@ function OverridesSelect(t0) {
       await SandboxManager.setSandboxSettings({
         allowUnsandboxedCommands: mode === "open"
       });
-      const message = mode === "open" ? "\u2713 Unsandboxed fallback allowed - commands can run outside sandbox when necessary" : "\u2713 Strict sandbox mode - all commands must run in sandbox or be excluded via the `excludedCommands` option";
+      const message = mode === "open" ? "\u2713 已允许非沙盒回退：必要时命令可在沙盒外运行" : "\u2713 严格沙盒模式：所有命令都必须在沙盒中运行，或通过 `excludedCommands` 排除";
       onComplete(message);
     };
     $[9] = onComplete;
@@ -132,7 +132,7 @@ function OverridesSelect(t0) {
   const handleSelect = t7;
   let t8;
   if ($[11] === Symbol.for("react.memo_cache_sentinel")) {
-    t8 = <Box marginBottom={1}><Text bold={true}>Configure Overrides:</Text></Box>;
+    t8 = <Box marginBottom={1}><Text bold={true}>配置覆盖设置：</Text></Box>;
     $[11] = t8;
   } else {
     t8 = $[11];
@@ -161,21 +161,21 @@ function OverridesSelect(t0) {
   }
   let t11;
   if ($[20] === Symbol.for("react.memo_cache_sentinel")) {
-    t11 = <Text dimColor={true}><Text bold={true} dimColor={true}>Allow unsandboxed fallback:</Text>{" "}When a command fails due to sandbox restrictions, Claude can retry with dangerouslyDisableSandbox to run outside the sandbox (falling back to default permissions).</Text>;
+    t11 = <Text dimColor={true}><Text bold={true} dimColor={true}>允许非沙盒回退：</Text>{" "}当命令因沙盒限制失败时，SecAI 可以使用 dangerouslyDisableSandbox 在沙盒外重试（回退到默认权限）。</Text>;
     $[20] = t11;
   } else {
     t11 = $[20];
   }
   let t12;
   if ($[21] === Symbol.for("react.memo_cache_sentinel")) {
-    t12 = <Text dimColor={true}><Text bold={true} dimColor={true}>Strict sandbox mode:</Text>{" "}All bash commands invoked by the model must run in the sandbox unless they are explicitly listed in excludedCommands.</Text>;
+    t12 = <Text dimColor={true}><Text bold={true} dimColor={true}>严格沙盒模式：</Text>{" "}模型调用的所有 bash 命令都必须在沙盒中运行，除非它们已明确列入 excludedCommands。</Text>;
     $[21] = t12;
   } else {
     t12 = $[21];
   }
   let t13;
   if ($[22] === Symbol.for("react.memo_cache_sentinel")) {
-    t13 = <Box flexDirection="column" marginTop={1} gap={1}>{t11}{t12}<Text dimColor={true}>Learn more:{" "}<Link url="https://code.claude.com/docs/en/sandboxing#configure-sandboxing">code.claude.com/docs/en/sandboxing#configure-sandboxing</Link></Text></Box>;
+    t13 = <Box flexDirection="column" marginTop={1} gap={1}>{t11}{t12}</Box>;
     $[22] = t13;
   } else {
     t13 = $[22];

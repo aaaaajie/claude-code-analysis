@@ -96,7 +96,7 @@ export function getSSLErrorHint(error: unknown): string | null {
   if (!details?.isSSLError) {
     return null
   }
-  return `SSL certificate error (${details.code}). If you are behind a corporate proxy or TLS-intercepting firewall, set NODE_EXTRA_CA_CERTS to your CA bundle path, or ask IT to allowlist *.anthropic.com. Run /doctor for details.`
+  return `SSL 证书错误（${details.code}）。如果你位于公司代理或 TLS 拦截防火墙之后，请将 NODE_EXTRA_CA_CERTS 设置为 CA 证书包路径，或让 IT 将 *.anthropic.com 加入允许列表。`
 }
 
 /**

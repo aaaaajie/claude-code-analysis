@@ -713,7 +713,7 @@ function EmptyStateMessage(t0) {
       {
         let t1;
         if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <><Text dimColor={true}>Git is required to install marketplaces.</Text><Text dimColor={true}>Please install git and restart Claude Code.</Text></>;
+          t1 = <><Text dimColor={true}>Git is required to install marketplaces.</Text><Text dimColor={true}>Please install git and restart SecAI.</Text></>;
           $[0] = t1;
         } else {
           t1 = $[0];
@@ -735,7 +735,7 @@ function EmptyStateMessage(t0) {
       {
         let t1;
         if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <><Text dimColor={true}>Your organization restricts which marketplaces can be added.</Text><Text dimColor={true}>Switch to the Marketplaces tab to view allowed sources.</Text></>;
+          t1 = <><Text dimColor={true}>你的组织限制了可添加的市场源。</Text><Text dimColor={true}>切换到“市场源”标签查看允许的来源。</Text></>;
           $[2] = t1;
         } else {
           t1 = $[2];

@@ -460,13 +460,13 @@ export function prependUserContext(
 
   return [
     createUserMessage({
-      content: `<system-reminder>\nAs you answer the user's questions, you can use the following context:\n${Object.entries(
+      content: `<system-reminder>\n回答用户问题时，你可以使用以下上下文：\n${Object.entries(
         context,
       )
         .map(([key, value]) => `# ${key}\n${value}`)
         .join('\n')}
 
-      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.\n</system-reminder>\n`,
+      重要：这些上下文不一定和当前任务相关。只有在它和任务高度相关时才需要回应或使用。\n</system-reminder>\n`,
       isMeta: true,
     }),
     ...messages,
@@ -493,7 +493,7 @@ export async function logContextMetrics(
     ])
   // Extract individual context sizes and calculate total
   const gitStatusSize = systemContext.gitStatus?.length ?? 0
-  const claudeMdSize = userContext.claudeMd?.length ?? 0
+  const claudeMdSize = userContext.secaiMd?.length ?? 0
 
   // Calculate total context size
   const totalContextSize = gitStatusSize + claudeMdSize

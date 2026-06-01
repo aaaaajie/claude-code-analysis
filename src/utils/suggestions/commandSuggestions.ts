@@ -272,15 +272,15 @@ function createCommandSuggestionItem(
 
   const isWorkflow = cmd.type === 'prompt' && cmd.kind === 'workflow'
   const fullDescription =
-    (isWorkflow ? cmd.description : formatDescriptionWithSource(cmd)) +
+    formatDescriptionWithSource(cmd) +
     (cmd.type === 'prompt' && cmd.argNames?.length
-      ? ` (arguments: ${cmd.argNames.join(', ')})`
+      ? `（参数：${cmd.argNames.join(', ')}）`
       : '')
 
   return {
     id: getCommandId(cmd),
     displayText: `/${commandName}${aliasText}`,
-    tag: isWorkflow ? 'workflow' : undefined,
+    tag: isWorkflow ? '工作流' : undefined,
     description: fullDescription,
     metadata: cmd,
   }

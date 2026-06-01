@@ -13,6 +13,12 @@ import {
   formatModelPricing,
 } from '../modelCost.js'
 import { getSettings_DEPRECATED } from '../settings/settings.js'
+import {
+  DEFAULT_SECAI_MODEL,
+  applySecAIEnvFromConfigSync,
+  getSecAIModelPresets,
+  isSecAIActive,
+} from '../../services/secai/client.js'
 import { checkOpus1mAccess, checkSonnet1mAccess } from './check1mAccess.js'
 import { getAPIProvider } from './providers.js'
 import { isModelAllowed } from './modelAllowlist.js'
@@ -40,6 +46,25 @@ export type ModelOption = {
   label: string
   description: string
   descriptionForModel?: string
+}
+
+function getSecAIModelOptions(): ModelOption[] {
+  const presets = getSecAIModelPresets()
+  const defaultPreset = presets.find(preset => preset.value === DEFAULT_SECAI_MODEL)
+  return [
+    {
+      value: null,
+      label: `${defaultPreset?.label ?? DEFAULT_SECAI_MODEL}（默认）`,
+      description: defaultPreset?.description ?? '使用 SecAI 默认模型。',
+      descriptionForModel: `SecAI 默认模型（当前 ${DEFAULT_SECAI_MODEL}）`,
+    },
+    ...presets.filter(preset => preset.value !== DEFAULT_SECAI_MODEL).map(preset => ({
+      value: preset.value,
+      label: preset.label,
+      description: preset.description,
+      descriptionForModel: `${preset.label}（${preset.value}）`,
+    })),
+  ]
 }
 
 export function getDefaultOptionForUser(fastMode = false): ModelOption {
@@ -459,6 +484,11 @@ function getKnownModelOption(model: string): ModelOption | null {
 }
 
 export function getModelOptions(fastMode = false): ModelOption[] {
+  applySecAIEnvFromConfigSync()
+  if (isSecAIActive()) {
+    return filterModelOptionsByAllowlist(getSecAIModelOptions())
+  }
+
   const options = getModelOptionsBase(fastMode)
 
   // Add the custom model from the ANTHROPIC_CUSTOM_MODEL_OPTION env var

@@ -22,7 +22,7 @@ import { pollForApprovedExitPlanMode, UltraplanPollError } from '../utils/ultrap
 
 // Multi-agent exploration is slow; 30min timeout.
 const ULTRAPLAN_TIMEOUT_MS = 30 * 60 * 1000;
-export const CCR_TERMS_URL = 'https://code.claude.com/docs/en/claude-code-on-the-web';
+export const CCR_TERMS_URL = 'https://code.secai.com/docs/en/claude-code-on-the-web';
 
 // CCR runs against the first-party API — use the canonical ID, not the
 // provider-specific string getModelStrings() would return (which may be a
@@ -115,7 +115,7 @@ function startDetachedPoll(taskId: string, sessionId: string, url: string, getAp
           ultraplanSessionUrl: undefined
         } : prev);
         enqueuePendingNotification({
-          value: [`Ultraplan approved — executing in Claude Code on the web. Follow along at: ${url}`, '', 'Results will land as a pull request when the remote session finishes. There is nothing to do here.'].join('\n'),
+          value: [`Ultraplan 已批准，正在云端执行。进度：${url}`, '', '远程会话完成后会以拉取请求形式返回结果。这里无需继续操作。'].join('\n'),
           mode: 'task-notification'
         });
       } else {
@@ -184,13 +184,13 @@ function startDetachedPoll(taskId: string, sessionId: string, url: string, getAp
 // multi-second teleportToRemote round-trip.
 function buildLaunchMessage(disconnectedBridge?: boolean): string {
   const prefix = disconnectedBridge ? `${REMOTE_CONTROL_DISCONNECTED_MSG} ` : '';
-  return `${DIAMOND_OPEN} ultraplan\n${prefix}Starting Claude Code on the web…`;
+  return `${DIAMOND_OPEN} ultraplan\n${prefix}正在启动云端 SecAI...`;
 }
 function buildSessionReadyMessage(url: string): string {
-  return `${DIAMOND_OPEN} ultraplan · Monitor progress in Claude Code on the web ${url}\nYou can continue working — when the ${DIAMOND_OPEN} fills, press ↓ to view results`;
+  return `${DIAMOND_OPEN} ultraplan · 在云端监控进度 ${url}\n你可以继续工作；当 ${DIAMOND_OPEN} 填满后，按 ↓ 查看结果`;
 }
 function buildAlreadyActiveMessage(url: string | undefined): string {
-  return url ? `ultraplan: already polling. Open ${url} to check status, or wait for the plan to land here.` : 'ultraplan: already launching. Please wait for the session to start.';
+  return url ? `ultraplan：已在轮询。打开 ${url} 查看状态，或等待计划返回到这里。` : 'ultraplan：正在启动，请等待会话开始。';
 }
 
 /**
@@ -272,7 +272,7 @@ export async function launchUltraplan(opts: {
     return [
     // Rendered via <Markdown>; raw <message> is tokenized as HTML
     // and dropped. Backslash-escape the brackets.
-    'Usage: /ultraplan \\<prompt\\>, or include "ultraplan" anywhere', 'in your prompt', '', 'Advanced multi-agent plan mode with our most powerful model', '(Opus). Runs in Claude Code on the web. When the plan is ready,', 'you can execute it in the web session or send it back here.', 'Terminal stays free while the remote plans.', 'Requires /login.', '', `Terms: ${CCR_TERMS_URL}`].join('\n');
+    '用法：/ultraplan \\<提示词\\>，或在提示词中包含 "ultraplan"', '', '使用最强模型（Opus）的高级多智能体计划模式。会在云端运行。计划准备好后，', '你可以在云端会话中执行，或将计划发送回这里。', '远程规划期间，终端仍可继续使用。', '需要 /login。', '', `条款：${CCR_TERMS_URL}`].join('\n');
   }
 
   // Set synchronously before the detached flow to prevent duplicate launches
@@ -461,7 +461,7 @@ const call: LocalJSXCommandCall = async (onDone, context, args) => {
 export default {
   type: 'local-jsx',
   name: 'ultraplan',
-  description: `~10–30 min · Claude Code on the web drafts an advanced plan you can edit and approve. See ${CCR_TERMS_URL}`,
+  description: `~10-30 分钟 · 云端起草高级计划，你可以编辑并批准。`,
   argumentHint: '<prompt>',
   isEnabled: () => "external" === 'ant',
   load: () => Promise.resolve({

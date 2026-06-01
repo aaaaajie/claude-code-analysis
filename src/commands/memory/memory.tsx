@@ -4,7 +4,7 @@ import type { CommandResultDisplay } from '../../commands.js';
 import { Dialog } from '../../components/design-system/Dialog.js';
 import { MemoryFileSelector } from '../../components/memory/MemoryFileSelector.js';
 import { getRelativeMemoryPath } from '../../components/memory/MemoryUpdateNotification.js';
-import { Box, Link, Text } from '../../ink.js';
+import { Box } from '../../ink.js';
 import type { LocalJSXCommandCall } from '../../types/command.js';
 import { clearMemoryFileCaches, getMemoryFiles } from '../../utils/claudemd.js';
 import { getClaudeConfigHomeDir } from '../../utils/envUtils.js';
@@ -20,7 +20,7 @@ function MemoryCommand({
 }): React.ReactNode {
   const handleSelectMemoryFile = async (memoryPath: string) => {
     try {
-      // Create claude directory if it doesn't exist (idempotent with recursive)
+      // Create config directory if it doesn't exist.
       if (memoryPath.includes(getClaudeConfigHomeDir())) {
         await mkdir(getClaudeConfigHomeDir(), {
           recursive: true
@@ -51,32 +51,27 @@ function MemoryCommand({
         editorSource = '$EDITOR';
         editorValue = process.env.EDITOR;
       }
-      const editorInfo = editorSource !== 'default' ? `Using ${editorSource}="${editorValue}".` : '';
-      const editorHint = editorInfo ? `> ${editorInfo} To change editor, set $EDITOR or $VISUAL environment variable.` : `> To use a different editor, set the $EDITOR or $VISUAL environment variable.`;
-      onDone(`Opened memory file at ${getRelativeMemoryPath(memoryPath)}\n\n${editorHint}`, {
+      const editorInfo = editorSource !== 'default' ? `正在使用 ${editorSource}="${editorValue}"。` : '';
+      const editorHint = editorInfo ? `> ${editorInfo} 如需更改编辑器，请设置 $EDITOR 或 $VISUAL 环境变量。` : `> 如需使用其他编辑器，请设置 $EDITOR 或 $VISUAL 环境变量。`;
+      onDone(`已打开记忆文件：${getRelativeMemoryPath(memoryPath)}\n\n${editorHint}`, {
         display: 'system'
       });
     } catch (error) {
       logError(error);
-      onDone(`Error opening memory file: ${error}`);
+      onDone(`打开记忆文件失败：${error}`);
     }
   };
   const handleCancel = () => {
-    onDone('Cancelled memory editing', {
+    onDone('已取消编辑记忆', {
       display: 'system'
     });
   };
-  return <Dialog title="Memory" onCancel={handleCancel} color="remember">
+  return <Dialog title="记忆" onCancel={handleCancel} color="remember">
       <Box flexDirection="column">
         <React.Suspense fallback={null}>
           <MemoryFileSelector onSelect={handleSelectMemoryFile} onCancel={handleCancel} />
         </React.Suspense>
 
-        <Box marginTop={1}>
-          <Text dimColor>
-            Learn more: <Link url="https://code.claude.com/docs/en/memory" />
-          </Text>
-        </Box>
       </Box>
     </Dialog>;
 }

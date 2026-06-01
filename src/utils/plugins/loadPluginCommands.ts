@@ -353,10 +353,10 @@ function createPluginCommand(
           )
         }
 
-        // Replace ${CLAUDE_SKILL_DIR} with this specific skill's directory.
+        // Replace ${SECAI_SKILL_DIR} with this specific skill's directory.
         // Distinct from ${CLAUDE_PLUGIN_ROOT}: a plugin can contain multiple
         // skills, so CLAUDE_PLUGIN_ROOT points to the plugin root while
-        // CLAUDE_SKILL_DIR points to the individual skill's subdirectory.
+        // SECAI_SKILL_DIR points to the individual skill's subdirectory.
         if (config.isSkillMode) {
           const rawSkillDir = dirname(file.filePath)
           const skillDir =
@@ -364,14 +364,14 @@ function createPluginCommand(
               ? rawSkillDir.replace(/\\/g, '/')
               : rawSkillDir
           finalContent = finalContent.replace(
-            /\$\{CLAUDE_SKILL_DIR\}/g,
+            /\$\{SECAI_SKILL_DIR\}/g,
             skillDir,
           )
         }
 
-        // Replace ${CLAUDE_SESSION_ID} with the current session ID
+        // Replace ${SECAI_SESSION_ID} with the current session ID
         finalContent = finalContent.replace(
-          /\$\{CLAUDE_SESSION_ID\}/g,
+          /\$\{SECAI_SESSION_ID\}/g,
           getSessionId(),
         )
 

@@ -82,7 +82,7 @@ export function WorkspaceTab(t0) {
   const handleDirectorySelect = t4;
   let t5;
   if ($[10] !== onExit) {
-    t5 = () => onExit("Workspace dialog dismissed", {
+    t5 = () => onExit("已关闭工作区对话框", {
       display: "system"
     });
     $[10] = onExit;
@@ -97,7 +97,7 @@ export function WorkspaceTab(t0) {
     let t6;
     if ($[14] === Symbol.for("react.memo_cache_sentinel")) {
       t6 = {
-        label: `Add directory${figures.ellipsis}`,
+      label: `添加目录${figures.ellipsis}`,
         value: "add-directory"
       };
       $[14] = t6;
@@ -113,7 +113,7 @@ export function WorkspaceTab(t0) {
   const options = opts;
   let t6;
   if ($[15] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Box flexDirection="row" marginTop={1} marginLeft={2} gap={1}><Text>{`-  ${getOriginalCwd()}`}</Text><Text dimColor={true}>(Original working directory)</Text></Box>;
+    t6 = <Box flexDirection="row" marginTop={1} marginLeft={2} gap={1}><Text>{`-  ${getOriginalCwd()}`}</Text><Text dimColor={true}>（原始工作目录）</Text></Box>;
     $[15] = t6;
   } else {
     t6 = $[15];

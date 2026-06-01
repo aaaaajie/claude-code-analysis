@@ -5,6 +5,7 @@ const rewind = {
   name: 'rewind',
   aliases: ['checkpoint'],
   argumentHint: '',
+  isHidden: true,
   type: 'local',
   supportsNonInteractive: false,
   load: () => import('./rewind.js'),

@@ -14,8 +14,8 @@ export function registerDebugSkill(): void {
     name: 'debug',
     description:
       process.env.USER_TYPE === 'ant'
-        ? 'Debug your current Claude Code session by reading the session debug log. Includes all event logging'
-        : 'Enable debug logging for this session and help diagnose issues',
+        ? '读取当前 SecAI 会话调试日志以诊断问题，包含所有事件日志'
+        : '为当前会话启用调试日志并帮助诊断问题',
     allowedTools: ['Read', 'Grep', 'Glob'],
     argumentHint: '[issue description]',
     // disableModelInvocation so that the user has to explicitly request it in
@@ -68,7 +68,7 @@ Tell the user that debug logging is now active at \`${debugLogPath}\`, ask them 
 
       const prompt = `# Debug Skill
 
-Help the user debug an issue they're encountering in this current Claude Code session.
+Help the user debug an issue they're encountering in this current SecAI session.
 ${justEnabledSection}
 ## Session Debug Log
 
@@ -93,7 +93,7 @@ Remember that settings are in:
 
 1. Review the user's issue description
 2. The last ${DEFAULT_DEBUG_LINES_READ} lines show the debug file format. Look for [ERROR] and [WARN] entries, stack traces, and failure patterns across the file
-3. Consider launching the ${CLAUDE_CODE_GUIDE_AGENT_TYPE} subagent to understand the relevant Claude Code features
+3. Consider launching the ${CLAUDE_CODE_GUIDE_AGENT_TYPE} subagent to understand the relevant SecAI features
 4. Explain what you found in plain language
 5. Suggest concrete fixes or next steps
 `

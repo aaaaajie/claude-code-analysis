@@ -40,6 +40,7 @@ import { useKeybinding, useKeybindings } from '../../keybindings/useKeybinding.j
 import type { MCPServerConnection } from '../../services/mcp/types.js';
 import { abortPromptSuggestion, logSuggestionSuppressed } from '../../services/PromptSuggestion/promptSuggestion.js';
 import { type ActiveSpeculationState, abortSpeculation } from '../../services/PromptSuggestion/speculation.js';
+import { appendSecAILog, isSecAIActive } from '../../services/secai/client.js';
 import { getActiveAgentForInput, getViewedTeammateTask } from '../../state/selectors.js';
 import { enterTeammateView, exitTeammateView, stopOrDismissAgent } from '../../state/teammateViewHelpers.js';
 import type { ToolPermissionContext } from '../../Tool.js';
@@ -761,7 +762,7 @@ function PromptInput({
     if (feature('ULTRAPLAN') && ultraplanTriggers.length) {
       addNotification({
         key: 'ultraplan-active',
-        text: 'This prompt will launch an ultraplan session in Claude Code on the web',
+        text: '此提示将启动云端 Ultraplan 会话',
         priority: 'immediate',
         timeoutMs: 5000
       });
@@ -773,7 +774,7 @@ function PromptInput({
     if (isUltrareviewEnabled() && ultrareviewTriggers.length) {
       addNotification({
         key: 'ultrareview-active',
-        text: 'Run /ultrareview after Claude finishes to review these changes in the cloud',
+        text: 'SecAI 完成后运行 /ultrareview，在云端审阅这些更改',
         priority: 'immediate',
         timeoutMs: 5000
       });
@@ -983,6 +984,13 @@ function PromptInput({
   }, []);
   const onSubmit = useCallback(async (inputParam: string, isSubmittingSlashCommand = false) => {
     inputParam = inputParam.trimEnd();
+    if (isSecAIActive()) {
+      appendSecAILog('prompt_submit_received', {
+        length: inputParam.length,
+        mode,
+        is_submitting_slash_command: isSubmittingSlashCommand
+      });
+    }
 
     // Don't submit if a footer indicator is being opened. Read fresh from
     // store — footer:openSelected calls selectFooterItem(null) then onSubmit
@@ -991,6 +999,12 @@ function PromptInput({
     // selection (pill disappeared) doesn't swallow Enter.
     const state = store.getState();
     if (state.footerSelection && footerItems.includes(state.footerSelection)) {
+      if (isSecAIActive()) {
+        appendSecAILog('prompt_submit_ignored', {
+          reason: 'footer_selection',
+          footer_selection: state.footerSelection
+        });
+      }
       return;
     }
 
@@ -998,6 +1012,12 @@ function PromptInput({
     // BaseTextInput's useInput registers before that hook (child effects fire first),
     // so without this guard Enter would double-fire and auto-submit the suggestion.
     if (state.viewSelectionMode === 'selecting-agent') {
+      if (isSecAIActive()) {
+        appendSecAILog('prompt_submit_ignored', {
+          reason: 'view_selection_mode',
+          view_selection_mode: state.viewSelectionMode
+        });
+      }
       return;
     }
 
@@ -1065,15 +1085,33 @@ function PromptInput({
 
     // Allow submission if there are images attached, even without text
     if (inputParam.trim() === '' && !hasImages) {
+      if (isSecAIActive()) {
+        appendSecAILog('prompt_submit_ignored', { reason: 'empty_input' });
+      }
       return;
     }
 
     // PromptInput UX: Check if suggestions dropdown is showing
     // For directory suggestions, allow submission (Tab is used for completion)
     const hasDirectorySuggestions = suggestionsState.suggestions.length > 0 && suggestionsState.suggestions.every(s => s.description === 'directory');
-    if (suggestionsState.suggestions.length > 0 && !isSubmittingSlashCommand && !hasDirectorySuggestions) {
+    const trimmedInput = inputParam.trimStart();
+    const slashCommandName = trimmedInput.startsWith('/') ? trimmedInput.slice(1).split(/\s+/, 1)[0] : undefined;
+    const isKnownSlashCommandInput = slashCommandName ? hasCommand(slashCommandName, commands) : false;
+    if (suggestionsState.suggestions.length > 0 && !isSubmittingSlashCommand && !hasDirectorySuggestions && !isKnownSlashCommandInput) {
       logForDebugging(`[onSubmit] early return: suggestions showing (count=${suggestionsState.suggestions.length})`);
+      if (isSecAIActive()) {
+        appendSecAILog('prompt_submit_ignored', {
+          reason: 'suggestions_showing',
+          suggestion_count: suggestionsState.suggestions.length
+        });
+      }
       return; // Don't submit, user needs to clear suggestions first
+    }
+    if (isKnownSlashCommandInput && isSecAIActive()) {
+      appendSecAILog('prompt_submit_slash_suggestions_bypassed', {
+        command: slashCommandName,
+        suggestion_count: suggestionsState.suggestions.length
+      });
     }
 
     // Log suggestion outcome if one exists
@@ -1097,12 +1135,17 @@ function PromptInput({
     }
 
     // Normal leader submission
+    if (isSecAIActive()) {
+      appendSecAILog('prompt_submit_dispatch', {
+        length: inputParam.length
+      });
+    }
     await onSubmitProp(inputParam, {
       setCursorOffset,
       clearBuffer,
       resetHistory
     });
-  }, [promptSuggestionState, speculation, speculationSessionTimeSavedMs, teamContext, store, footerItems, suggestionsState.suggestions, onSubmitProp, onAgentSubmit, clearBuffer, resetHistory, logOutcomeAtSubmission, setAppState, markAccepted, pastedContents, removeNotification]);
+  }, [promptSuggestionState, speculation, speculationSessionTimeSavedMs, teamContext, store, footerItems, suggestionsState.suggestions, commands, onSubmitProp, onAgentSubmit, clearBuffer, resetHistory, logOutcomeAtSubmission, setAppState, markAccepted, pastedContents, removeNotification]);
   const {
     suggestions,
     selectedSuggestion,
@@ -2035,12 +2078,12 @@ function PromptInput({
     });
     setShowModelPicker(false);
     const effectiveFastMode = (isFastMode ?? false) && !wasFastModeDisabled;
-    let message = `Model set to ${modelDisplayString(model)}`;
+    let message = `模型已切换为 ${modelDisplayString(model)}`;
     if (isBilledAsExtraUsage(model, effectiveFastMode, isOpus1mMergeEnabled())) {
-      message += ' · Billed as extra usage';
+      message += ' · 按额外用量计费';
     }
     if (wasFastModeDisabled) {
-      message += ' · Fast mode OFF';
+      message += ' · 快速模式已关闭';
     }
     addNotification({
       key: 'model-switched',

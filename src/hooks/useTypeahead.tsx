@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNotifications } from 'src/context/notifications.js';
 import { Text } from 'src/ink.js';
 import { logEvent } from 'src/services/analytics/index.js';
+import { appendSecAILog, isSecAIActive } from 'src/services/secai/client.js';
 import { useDebounceCallback } from 'usehooks-ts';
 import { type Command, getCommandName } from '../commands.js';
 import { getModeFromInput, getValueFromInput } from '../components/PromptInput/inputModes.js';
@@ -1356,8 +1357,16 @@ export function useTypeahead({
     // Shift+Enter and Meta+Enter insert newlines (handled by useTextInput),
     // so don't accept the suggestion for those.
     if (e.key === 'return' && !e.shift && !e.meta) {
+      if (isSecAIActive()) {
+        appendSecAILog('typeahead_enter', {
+          suggestion_type: suggestionType,
+          suggestion_count: suggestions.length,
+          selected_suggestion: selectedSuggestion,
+        });
+      }
       e.preventDefault();
       handleEnter();
+      e.stopImmediatePropagation();
     }
   };
 

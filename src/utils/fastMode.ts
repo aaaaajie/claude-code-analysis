@@ -34,8 +34,12 @@ import {
   updateSettingsForSource,
 } from './settings/settings.js'
 import { createSignal } from './signal.js'
+import { isSecAIActive } from '../services/secai/client.js'
 
 export function isFastModeEnabled(): boolean {
+  if (isSecAIActive()) {
+    return false
+  }
   return !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_FAST_MODE)
 }
 
@@ -55,23 +59,23 @@ function getDisabledReasonMessage(
   switch (disabledReason) {
     case 'free':
       return authType === 'oauth'
-        ? 'Fast mode requires a paid subscription'
-        : 'Fast mode unavailable during evaluation. Please purchase credits.'
+        ? '快速模式需要付费套餐'
+        : '评估期间不可使用快速模式。请先购买额度。'
     case 'preference':
-      return 'Fast mode has been disabled by your organization'
+      return '快速模式已被组织禁用'
     case 'extra_usage_disabled':
       // Only OAuth users can have extra_usage_disabled; console users don't have this concept
-      return 'Fast mode requires extra usage billing · /extra-usage to enable'
+      return '快速模式需要更高用量额度'
     case 'network_error':
-      return 'Fast mode unavailable due to network connectivity issues'
+      return '网络连接异常，快速模式暂不可用'
     case 'unknown':
-      return 'Fast mode is currently unavailable'
+      return '快速模式当前不可用'
   }
 }
 
 export function getFastModeUnavailableReason(): string | null {
   if (!isFastModeEnabled()) {
-    return 'Fast mode is not available'
+    return '快速模式不可用'
   }
 
   const statigReason = getFeatureValue_CACHED_MAY_BE_STALE(
@@ -266,20 +270,20 @@ function getOverageDisabledMessage(reason: string | null): string {
       return 'Fast mode disabled · extra usage credits exhausted'
     case 'org_level_disabled':
     case 'org_service_level_disabled':
-      return 'Fast mode disabled · extra usage disabled by your organization'
+      return '快速模式已禁用：组织未开放对应额度'
     case 'org_level_disabled_until':
-      return 'Fast mode disabled · extra usage spending cap reached'
+      return '快速模式已禁用：组织用量上限已达到'
     case 'member_level_disabled':
-      return 'Fast mode disabled · extra usage disabled for your account'
+      return '快速模式已禁用：当前账号未开放对应额度'
     case 'seat_tier_level_disabled':
     case 'seat_tier_zero_credit_limit':
     case 'member_zero_credit_limit':
-      return 'Fast mode disabled · extra usage not available for your plan'
+      return '快速模式已禁用：当前套餐不可用'
     case 'overage_not_provisioned':
     case 'no_limits_configured':
-      return 'Fast mode requires extra usage billing · /extra-usage to enable'
+      return '快速模式需要更高用量额度'
     default:
-      return 'Fast mode disabled · extra usage not available'
+      return '快速模式已禁用：当前不可用'
   }
 }
 

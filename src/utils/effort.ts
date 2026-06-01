@@ -7,6 +7,7 @@ import { getAPIProvider } from './model/providers.js'
 import { get3PModelCapabilityOverride } from './model/modelSupportOverrides.js'
 import { isEnvTruthy } from './envUtils.js'
 import type { EffortLevel } from 'src/entrypoints/sdk/runtimeTypes.js'
+import { isSecAIActive, isSecAIModelPreset } from '../services/secai/client.js'
 
 export type { EffortLevel }
 
@@ -21,6 +22,9 @@ export type EffortValue = EffortLevel | number
 
 // @[MODEL LAUNCH]: Add the new model to the allowlist if it supports the effort parameter.
 export function modelSupportsEffort(model: string): boolean {
+  if (isSecAIEffortModel(model)) {
+    return true
+  }
   const m = model.toLowerCase()
   if (isEnvTruthy(process.env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT)) {
     return true
@@ -51,6 +55,9 @@ export function modelSupportsEffort(model: string): boolean {
 // @[MODEL LAUNCH]: Add the new model to the allowlist if it supports 'max' effort.
 // Per API docs, 'max' is Opus 4.6 only for public models — other models return an error.
 export function modelSupportsMaxEffort(model: string): boolean {
+  if (isSecAIEffortModel(model)) {
+    return true
+  }
   const supported3P = get3PModelCapabilityOverride(model, 'max_effort')
   if (supported3P !== undefined) {
     return supported3P
@@ -62,6 +69,17 @@ export function modelSupportsMaxEffort(model: string): boolean {
     return true
   }
   return false
+}
+
+export function getSupportedEffortLevelsForModel(
+  model: string,
+): readonly EffortLevel[] {
+  if (isSecAIEffortModel(model)) {
+    return ['high', 'max']
+  }
+  return modelSupportsMaxEffort(model)
+    ? EFFORT_LEVELS
+    : EFFORT_LEVELS.filter(level => level !== 'max')
 }
 
 export function isEffortLevel(value: string): value is EffortLevel {
@@ -96,6 +114,9 @@ export function toPersistableEffort(
   value: EffortValue | undefined,
 ): EffortLevel | undefined {
   if (value === 'low' || value === 'medium' || value === 'high') {
+    return value
+  }
+  if (value === 'max' && isSecAIActive()) {
     return value
   }
   if (value === 'max' && process.env.USER_TYPE === 'ant') {
@@ -159,6 +180,9 @@ export function resolveAppliedEffort(
   }
   const resolved =
     envOverride ?? appStateEffortValue ?? getDefaultEffortForModel(model)
+  if (isSecAIEffortModel(model)) {
+    return resolved === 'max' ? 'max' : 'high'
+  }
   // API rejects 'max' on non-Opus-4.6 models — downgrade to 'high'.
   if (resolved === 'max' && !modelSupportsMaxEffort(model)) {
     return 'high'
@@ -215,6 +239,10 @@ export function convertEffortValueToLevel(value: EffortValue): EffortLevel {
   return 'high'
 }
 
+export function isSecAIEffortModel(model: string): boolean {
+  return isSecAIActive() && isSecAIModelPreset(model)
+}
+
 /**
  * Get user-facing description for effort levels
  *
@@ -222,15 +250,23 @@ export function convertEffortValueToLevel(value: EffortValue): EffortLevel {
  * @returns Human-readable description
  */
 export function getEffortLevelDescription(level: EffortLevel): string {
+  if (isSecAIActive()) {
+    switch (level) {
+      case 'max':
+        return '深度思考，适合复杂分析、审计和报告生成'
+      default:
+        return '标准思考，适合日常分析和编码任务'
+    }
+  }
   switch (level) {
     case 'low':
-      return 'Quick, straightforward implementation with minimal overhead'
+      return '快速处理，适合简单任务'
     case 'medium':
-      return 'Balanced approach with standard implementation and testing'
+      return '平衡速度和质量，适合常规任务'
     case 'high':
-      return 'Comprehensive implementation with extensive testing and documentation'
+      return '更充分的分析和验证，适合复杂任务'
     case 'max':
-      return 'Maximum capability with deepest reasoning (Opus 4.6 only)'
+      return '最高强度推理，适合高复杂度任务'
   }
 }
 
@@ -242,13 +278,13 @@ export function getEffortLevelDescription(level: EffortLevel): string {
  */
 export function getEffortValueDescription(value: EffortValue): string {
   if (process.env.USER_TYPE === 'ant' && typeof value === 'number') {
-    return `[ANT-ONLY] Numeric effort value of ${value}`
+    return `数值推理强度 ${value}`
   }
 
   if (typeof value === 'string') {
     return getEffortLevelDescription(value)
   }
-  return 'Balanced approach with standard implementation and testing'
+  return '平衡速度和质量，适合常规任务'
 }
 
 export type OpusDefaultEffortConfig = {
@@ -279,6 +315,9 @@ export function getOpusDefaultEffortConfig(): OpusDefaultEffortConfig {
 export function getDefaultEffortForModel(
   model: string,
 ): EffortValue | undefined {
+  if (isSecAIEffortModel(model)) {
+    return 'high'
+  }
   if (process.env.USER_TYPE === 'ant') {
     const config = getAntModelOverrideConfig()
     const isDefaultModel =

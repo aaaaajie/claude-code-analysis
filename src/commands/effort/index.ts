@@ -4,8 +4,9 @@ import { shouldInferenceConfigCommandBeImmediate } from '../../utils/immediateCo
 export default {
   type: 'local-jsx',
   name: 'effort',
-  description: 'Set effort level for model usage',
-  argumentHint: '[low|medium|high|max|auto]',
+  description: '设置模型推理强度',
+  argumentHint: '[standard|deep|auto]',
+  isHidden: true,
   get immediate() {
     return shouldInferenceConfigCommandBeImmediate()
   },

@@ -272,7 +272,7 @@ export default { isEnabled: () => false, isHidden: true, name: 'stub' };
 有一个需要如实说明的点：
 
 - `commands.ts` 明确注册了 `./commands/buddy/index.js`，见 [`src/commands.ts#L118`](../src/commands.ts#L118)
-- 但当前泄露出的 `src/` 目录里没有这份实现文件
+- 但当前 `src/` 目录里没有这份实现文件
 
 所以关于 `/buddy` 命令本身的全部子动作，我们不能百分之百逐条复原；但从旁边的状态位和 UI 行为来看，至少可以确定它涉及 hatch，而且还存在 `/buddy pet` 这种互动动作，因为 `companionPetAt` 的注释已经直接写了“Timestamp of last /buddy pet”，见 [`src/state/AppStateStore.ts#L170`](../src/state/AppStateStore.ts#L170)。
 
@@ -294,7 +294,7 @@ export default { isEnabled: () => false, isHidden: true, name: 'stub' };
 - `AppStateStore` 注释写的是 `friend observer (src/buddy/observer.ts)`，见 [`src/state/AppStateStore.ts#L168`](../src/state/AppStateStore.ts#L168)
 - 但 `src/buddy/observer.ts` 这份源码在当前目录里同样缺失
 
-因此，我们能确认“它会在每轮对话后给一个 companion reaction”，但 reaction 的具体 prompt 和筛选规则，现在还不能从这份泄露目录里完整复原。
+因此，我们能确认“它会在每轮对话后给一个 companion reaction”，但 reaction 的具体 prompt 和筛选规则，现在还不能从这份源码目录里完整复原。
 
 ### 6.6 把每一个 buddy 原型都还原出来
 

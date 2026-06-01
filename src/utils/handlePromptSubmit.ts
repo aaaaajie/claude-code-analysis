@@ -30,6 +30,7 @@ import type { ProcessUserInputContext } from './processUserInput/processUserInpu
 import { processUserInput } from './processUserInput/processUserInput.js'
 import type { QueryGuard } from './QueryGuard.js'
 import { queryCheckpoint, startQueryProfile } from './queryProfiler.js'
+import { appendSecAILog, isSecAIActive } from '../services/secai/client.js'
 import { runWithWorkload } from './workloadContext.js'
 
 function exit(): void {
@@ -174,6 +175,16 @@ export async function handlePromptSubmit(
   const input = params.input ?? ''
   const mode = params.mode ?? 'prompt'
   const rawPastedContents = params.pastedContents ?? {}
+  if (isSecAIActive()) {
+    appendSecAILog('handle_prompt_submit_called', {
+      length: input.length,
+      mode,
+      query_source: params.querySource,
+      query_guard_active: queryGuard.isActive,
+      is_external_loading: isExternalLoading,
+      queued_count: queuedCommands?.length ?? 0,
+    })
+  }
 
   // Images are only sent if their [Image #N] placeholder is still in the text.
   // Deleting the inline pill drops the image; orphaned entries are filtered here.
@@ -186,6 +197,9 @@ export async function handlePromptSubmit(
 
   const hasImages = Object.values(pastedContents).some(isValidImagePaste)
   if (input.trim() === '') {
+    if (isSecAIActive()) {
+      appendSecAILog('handle_prompt_submit_return', { reason: 'empty_input' })
+    }
     return
   }
 
@@ -311,8 +325,21 @@ export async function handlePromptSubmit(
   }
 
   if (queryGuard.isActive || isExternalLoading) {
+    if (isSecAIActive()) {
+      appendSecAILog('handle_prompt_submit_enqueue', {
+        reason: queryGuard.isActive ? 'query_guard_active' : 'external_loading',
+        mode,
+        length: finalInput.trim().length,
+      })
+    }
     // Only allow prompt and bash mode commands to be queued
     if (mode !== 'prompt' && mode !== 'bash') {
+      if (isSecAIActive()) {
+        appendSecAILog('handle_prompt_submit_return', {
+          reason: 'unsupported_queue_mode',
+          mode,
+        })
+      }
       return
     }
 
@@ -351,7 +378,19 @@ export async function handlePromptSubmit(
   }
 
   // Start query profiling for this query
+  if (isSecAIActive()) {
+    appendSecAILog('handle_prompt_submit_execute_now', {
+      mode,
+      length: finalInput.length,
+    })
+  }
+  if (isSecAIActive()) {
+    appendSecAILog('handle_prompt_submit_before_profile')
+  }
   startQueryProfile()
+  if (isSecAIActive()) {
+    appendSecAILog('handle_prompt_submit_after_profile')
+  }
 
   // Construct a QueuedCommand from the direct user input so both paths
   // go through the same executeUserInput loop. This ensures images get
@@ -363,6 +402,12 @@ export async function handlePromptSubmit(
     pastedContents: hasImages ? pastedContents : undefined,
     skipSlashCommands,
     uuid,
+  }
+  if (isSecAIActive()) {
+    appendSecAILog('handle_prompt_submit_before_execute_user_input', {
+      mode: cmd.mode,
+      length: typeof cmd.value === 'string' ? cmd.value.length : -1,
+    })
   }
 
   await executeUserInput({
@@ -410,14 +455,33 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
     resetHistory,
     canUseTool,
     queuedCommands,
+    isExternalLoading,
   } = params
 
   // Note: paste references are already processed before calling this function
   // (either in handlePromptSubmit before queuing, or before initial execution).
   // Always create a fresh abort controller — queryGuard guarantees no concurrent
   // executeUserInput call, so there's no prior controller to inherit.
+  if (isSecAIActive()) {
+    appendSecAILog('execute_user_input_enter', {
+      queued_count: queuedCommands?.length ?? 0,
+      query_source: querySource,
+    })
+  }
+  if (isSecAIActive()) {
+    appendSecAILog('execute_user_input_before_abort_controller')
+  }
   const abortController = createAbortController()
+  if (isSecAIActive()) {
+    appendSecAILog('execute_user_input_after_abort_controller')
+  }
+  if (isSecAIActive()) {
+    appendSecAILog('execute_user_input_before_set_abort_controller')
+  }
   setAbortController(abortController)
+  if (isSecAIActive()) {
+    appendSecAILog('execute_user_input_after_set_abort_controller')
+  }
 
   function makeContext(): ProcessUserInputContext {
     return getToolUseContext(messages, [], abortController, mainLoopModel)
@@ -428,6 +492,13 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
   // which transitions running→idle; cancelReservation() below is a no-op in
   // that case (only acts on dispatching state).
   try {
+    if (isSecAIActive()) {
+      appendSecAILog('handle_prompt_submit_start', {
+        queued_count: queuedCommands?.length ?? 0,
+        query_source: querySource,
+        is_external_loading: isExternalLoading === true,
+      })
+    }
     // Reserve the guard BEFORE processUserInput — processBashCommand awaits
     // BashTool.call() and processSlashCommand awaits getMessagesForSlashCommand,
     // so the guard must be active during those awaits to ensure concurrent
@@ -473,6 +544,13 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
       for (let i = 0; i < commands.length; i++) {
         const cmd = commands[i]!
         const isFirst = i === 0
+        if (isSecAIActive()) {
+          appendSecAILog('handle_prompt_submit_command', {
+            index: i,
+            mode: cmd.mode,
+            length: typeof cmd.value === 'string' ? cmd.value.length : -1,
+          })
+        }
         const result = await processUserInput({
           input: cmd.value,
           preExpansionInput: cmd.preExpansionValue,
@@ -522,6 +600,15 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
       }
 
       queryCheckpoint('query_process_user_input_end')
+      if (isSecAIActive()) {
+        appendSecAILog('handle_prompt_submit_after_process', {
+          should_query: shouldQuery,
+          new_message_count: newMessages.length,
+          allowed_tool_count: allowedTools?.length ?? 0,
+          model,
+          effort,
+        })
+      }
       if (fileHistoryEnabled()) {
         queryCheckpoint('query_file_history_snapshot_start')
         newMessages.filter(selectableUserMessagesFilter).forEach(message => {
@@ -557,6 +644,15 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
             ? primaryCmd.value
             : undefined
         const shouldCallBeforeQuery = primaryMode === 'prompt'
+        if (isSecAIActive()) {
+          appendSecAILog('handle_prompt_submit_before_on_query', {
+            should_query: shouldQuery,
+            message_count: newMessages.length,
+            model: model
+              ? resolveSkillModelOverride(model, mainLoopModel)
+              : mainLoopModel,
+          })
+        }
         await onQuery(
           newMessages,
           abortController,
@@ -570,6 +666,9 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
           effort,
         )
       } else {
+        if (isSecAIActive()) {
+          appendSecAILog('handle_prompt_submit_no_messages')
+        }
         // Local slash commands that skip messages (e.g., /model, /theme).
         // Release the guard BEFORE clearing toolJSX to prevent spinner flash —
         // the spinner formula checks: (!toolJSX || showSpinner) && isLoading.

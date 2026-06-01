@@ -45,12 +45,12 @@ export function AddMarketplace({
   const handleAdd = async () => {
     const input = inputValue.trim();
     if (!input) {
-      setError('Please enter a marketplace source');
+      setError('请输入市场源');
       return;
     }
     const parsed = await parseMarketplaceInput(input);
     if (!parsed) {
-      setError('Invalid marketplace source format. Try: owner/repo, https://..., or ./path');
+      setError('市场源格式无效。可尝试：owner/repo、https://... 或 ./path');
       return;
     }
 
@@ -87,7 +87,7 @@ export function AddMarketplace({
       setLoading(false);
       if (cliMode) {
         // In CLI mode, set result to trigger completion
-        setResult(`Successfully added marketplace: ${name}`);
+        setResult(`已添加市场源：${name}`);
       } else {
         // In interactive mode, switch to browse view
         setViewState({
@@ -103,7 +103,7 @@ export function AddMarketplace({
       setLoading(false);
       if (cliMode) {
         // In CLI mode, set result with error to trigger completion
-        setResult(`Error: ${error.message}`);
+        setResult(`错误：${error.message}`);
       } else {
         setResult(null);
       }
@@ -123,11 +123,11 @@ export function AddMarketplace({
   return <Box flexDirection="column">
       <Box flexDirection="column" paddingX={1} borderStyle="round">
         <Box marginBottom={1}>
-          <Text bold>Add Marketplace</Text>
+          <Text bold>添加市场源</Text>
         </Box>
         <Box flexDirection="column">
-          <Text>Enter marketplace source:</Text>
-          <Text dimColor>Examples:</Text>
+          <Text>输入市场源：</Text>
+          <Text dimColor>示例：</Text>
           <Text dimColor> · owner/repo (GitHub)</Text>
           <Text dimColor> · git@github.com:owner/repo.git (SSH)</Text>
           <Text dimColor> · https://example.com/marketplace.json</Text>
@@ -139,7 +139,7 @@ export function AddMarketplace({
         {isLoading && <Box marginTop={1}>
             <Spinner />
             <Text>
-              {progressMessage || 'Adding marketplace to configuration…'}
+              {progressMessage || '正在将市场源添加到配置…'}
             </Text>
           </Box>}
         {error && <Box marginTop={1}>

@@ -19,7 +19,6 @@ import { openPath } from '../../utils/browser.js';
 import { getMemoryFiles, type MemoryFileInfo } from '../../utils/claudemd.js';
 import { getClaudeConfigHomeDir } from '../../utils/envUtils.js';
 import { getDisplayPath } from '../../utils/file.js';
-import { formatRelativeTimeAgo } from '../../utils/format.js';
 import { projectIsInGitRepo } from '../../utils/memory/versions.js';
 import { updateSettingsForSource } from '../../utils/settings/settings.js';
 import { Select } from '../CustomSelect/index.js';
@@ -37,6 +36,31 @@ interface ExtendedMemoryFileInfo extends MemoryFileInfo {
 // Remember last selected path
 let lastSelectedPath: string | undefined;
 const OPEN_FOLDER_PREFIX = '__open_folder__';
+const USER_MEMORY_FILENAME = 'SECAI.md';
+const PROJECT_MEMORY_FILENAME = 'AGENTS.md';
+
+function formatChineseRelativeTimeAgo(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) return '刚刚';
+
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return `${seconds} 秒前`;
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} 分钟前`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} 天前`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} 个月前`;
+
+  const years = Math.floor(months / 12);
+  return `${years} 年前`;
+}
 type Props = {
   onSelect: (path: string) => void;
   onCancel: () => void;
@@ -48,8 +72,8 @@ export function MemoryFileSelector(t0) {
     onCancel
   } = t0;
   const existingMemoryFiles = use(getMemoryFiles());
-  const userMemoryPath = join(getClaudeConfigHomeDir(), "CLAUDE.md");
-  const projectMemoryPath = join(getOriginalCwd(), "CLAUDE.md");
+  const userMemoryPath = join(getClaudeConfigHomeDir(), USER_MEMORY_FILENAME);
+  const projectMemoryPath = join(getOriginalCwd(), PROJECT_MEMORY_FILENAME);
   const hasUserMemory = existingMemoryFiles.some(f => f.path === userMemoryPath);
   const hasProjectMemory = existingMemoryFiles.some(f_0 => f_0.path === projectMemoryPath);
   const allMemoryFiles = [...existingMemoryFiles.filter(_temp).map(_temp2), ...(hasUserMemory ? [] : [{
@@ -72,10 +96,10 @@ export function MemoryFileSelector(t0) {
     const indent = depth > 0 ? "  ".repeat(depth - 1) : "";
     let label;
     if (file.type === "User" && !file.isNested && file.path === userMemoryPath) {
-      label = "User memory";
+      label = "用户记忆";
     } else {
       if (file.type === "Project" && !file.isNested && file.path === projectMemoryPath) {
-        label = "Project memory";
+        label = "项目记忆";
       } else {
         if (depth > 0) {
           label = `${indent}L ${displayPath}${existsLabel}`;
@@ -87,16 +111,16 @@ export function MemoryFileSelector(t0) {
     let description;
     const isGit = projectIsInGitRepo(getOriginalCwd());
     if (file.type === "User" && !file.isNested) {
-      description = "Saved in ~/.claude/CLAUDE.md";
+      description = `保存到 ~/.secai/${USER_MEMORY_FILENAME}`;
     } else {
       if (file.type === "Project" && !file.isNested && file.path === projectMemoryPath) {
-        description = `${isGit ? "Checked in at" : "Saved in"} ./CLAUDE.md`;
+        description = `${isGit ? "随项目提交" : "保存到"} ./${PROJECT_MEMORY_FILENAME}`;
       } else {
         if (file.parent) {
-          description = "@-imported";
+          description = "@ 导入";
         } else {
           if (file.isNested) {
-            description = "dynamically loaded";
+            description = "按路径自动加载";
           } else {
             description = "";
           }
@@ -115,7 +139,7 @@ export function MemoryFileSelector(t0) {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
       t1 = {
-        label: "Open auto-memory folder",
+        label: "打开自动记忆目录",
         value: `${OPEN_FOLDER_PREFIX}${getAutoMemPath()}`,
         description: ""
       };
@@ -128,7 +152,7 @@ export function MemoryFileSelector(t0) {
       let t2;
       if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
         t2 = {
-          label: "Open team memory folder",
+          label: "打开团队记忆目录",
           value: `${OPEN_FOLDER_PREFIX}${teamMemPaths.getTeamMemPath()}`,
           description: ""
         };
@@ -142,9 +166,9 @@ export function MemoryFileSelector(t0) {
       if (agent.memory) {
         const agentDir = getAgentMemoryDir(agent.agentType, agent.memory);
         folderOptions.push({
-          label: `Open ${chalk.bold(agent.agentType)} agent memory`,
+          label: `打开 ${chalk.bold(agent.agentType)} 智能体记忆`,
           value: `${OPEN_FOLDER_PREFIX}${agentDir}`,
-          description: `${agent.memory} scope`
+          description: `${agent.memory} 范围`
         });
       }
     }
@@ -189,7 +213,7 @@ export function MemoryFileSelector(t0) {
   useEffect(t2, t3);
   let t4;
   if ($[9] !== isDreamRunning || $[10] !== lastDreamAt) {
-    t4 = isDreamRunning ? "running" : lastDreamAt === null ? "" : lastDreamAt === 0 ? "never" : `last ran ${formatRelativeTimeAgo(new Date(lastDreamAt))}`;
+    t4 = isDreamRunning ? "运行中" : lastDreamAt === null ? "" : lastDreamAt === 0 ? "从未运行" : `上次运行于 ${formatChineseRelativeTimeAgo(new Date(lastDreamAt))}`;
     $[9] = isDreamRunning;
     $[10] = lastDreamAt;
     $[11] = t4;
@@ -321,10 +345,10 @@ export function MemoryFileSelector(t0) {
   }
   useKeybinding("select:previous", t12, t13);
   const t14 = focusedToggle === 0;
-  const t15 = autoMemoryOn ? "on" : "off";
+  const t15 = autoMemoryOn ? "开启" : "关闭";
   let t16;
   if ($[30] !== t15) {
-    t16 = <Text>Auto-memory: {t15}</Text>;
+    t16 = <Text>自动记忆：{t15}</Text>;
     $[30] = t15;
     $[31] = t16;
   } else {
@@ -341,7 +365,7 @@ export function MemoryFileSelector(t0) {
   }
   let t18;
   if ($[35] !== autoDreamOn || $[36] !== dreamStatus || $[37] !== focusedToggle || $[38] !== isDreamRunning || $[39] !== showDreamRow) {
-    t18 = showDreamRow && <ListItem isFocused={focusedToggle === 1} styled={false}><Text color={focusedToggle === 1 ? "suggestion" : undefined}>Auto-dream: {autoDreamOn ? "on" : "off"}{dreamStatus && <Text dimColor={true}> · {dreamStatus}</Text>}{!isDreamRunning && autoDreamOn && <Text dimColor={true}> · /dream to run</Text>}</Text></ListItem>;
+    t18 = showDreamRow && <ListItem isFocused={focusedToggle === 1} styled={false}><Text color={focusedToggle === 1 ? "suggestion" : undefined}>自动整理：{autoDreamOn ? "开启" : "关闭"}{dreamStatus && <Text dimColor={true}> · {dreamStatus}</Text>}{!isDreamRunning && autoDreamOn && <Text dimColor={true}> · 输入 /dream 运行</Text>}</Text></ListItem>;
     $[35] = autoDreamOn;
     $[36] = dreamStatus;
     $[37] = focusedToggle;

@@ -5,7 +5,7 @@ import { createMovedToPluginCommand } from './createMovedToPluginCommand.js'
 
 const SECURITY_REVIEW_MARKDOWN = `---
 allowed-tools: Bash(git diff:*), Bash(git status:*), Bash(git log:*), Bash(git show:*), Bash(git remote show:*), Read, Glob, Grep, LS, Task
-description: Complete a security review of the pending changes on the current branch
+description: 对当前分支待提交的更改进行安全审查
 ---
 
 You are a senior security engineer conducting a focused security review of the changes on this branch.
@@ -197,9 +197,8 @@ Your final reply must contain the markdown report and nothing else.`
 
 export default createMovedToPluginCommand({
   name: 'security-review',
-  description:
-    'Complete a security review of the pending changes on the current branch',
-  progressMessage: 'analyzing code changes for security risks',
+  description: '对当前分支待提交的更改进行安全审查',
+  progressMessage: '正在分析代码更改中的安全风险',
   pluginName: 'security-review',
   pluginCommand: 'security-review',
   async getPromptWhileMarketplaceIsPrivate(_args, context) {

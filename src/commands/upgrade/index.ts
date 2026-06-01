@@ -1,15 +1,11 @@
 import type { Command } from '../../commands.js'
-import { getSubscriptionType } from '../../utils/auth.js'
-import { isEnvTruthy } from '../../utils/envUtils.js'
 
 const upgrade = {
   type: 'local-jsx',
   name: 'upgrade',
-  description: 'Upgrade to Max for higher rate limits and more Opus',
-  availability: ['claude-ai'],
-  isEnabled: () =>
-    !isEnvTruthy(process.env.DISABLE_UPGRADE_COMMAND) &&
-    getSubscriptionType() !== 'enterprise',
+  description: '升级套餐以获得更高限额',
+  isEnabled: () => false,
+  isHidden: true,
   load: () => import('./upgrade.js'),
 } satisfies Command
 

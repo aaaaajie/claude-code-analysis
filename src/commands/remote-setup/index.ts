@@ -1,18 +1,12 @@
 import type { Command } from '../../commands.js'
-import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/growthbook.js'
-import { isPolicyAllowed } from '../../services/policyLimits/index.js'
 
 const web = {
   type: 'local-jsx',
   name: 'web-setup',
-  description:
-    'Setup Claude Code on the web (requires connecting your GitHub account)',
-  availability: ['claude-ai'],
-  isEnabled: () =>
-    getFeatureValue_CACHED_MAY_BE_STALE('tengu_cobalt_lantern', false) &&
-    isPolicyAllowed('allow_remote_sessions'),
+  description: '设置云端 SecAI（需要连接你的 GitHub 账号）',
+  isEnabled: () => false,
   get isHidden() {
-    return !isPolicyAllowed('allow_remote_sessions')
+    return true
   },
   load: () => import('./remote-setup.js'),
 } satisfies Command

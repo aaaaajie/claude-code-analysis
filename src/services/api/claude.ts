@@ -227,6 +227,15 @@ import {
 } from '../compact/microCompact.js'
 import { getInitializationStatus } from '../lsp/manager.js'
 import { isToolFromMcpServer } from '../mcp/utils.js'
+import {
+  appendSecAILog,
+  getSecAIToolMode,
+  isSecAIActive,
+} from '../secai/client.js'
+import {
+  getSecAIDSMLToolUseInstructions,
+  normalizeDSMLToolCallsFromText,
+} from '../secai/dsmlToolCalls.js'
 import { withStreamingVCR, withVCR } from '../vcr.js'
 import { CLIENT_REQUEST_ID_HEADER, getAnthropicClient } from './client.js'
 import {
@@ -1014,6 +1023,108 @@ export function stripExcessMediaItems(
   }) as (UserMessage | AssistantMessage)[]
 }
 
+function filterRepeatedSecAIToolCalls(
+  content: BetaContentBlock[],
+  messages: Message[],
+): { content: BetaContentBlock[]; skipped: number } {
+  const seen = getSeenToolCallSignatures(messages)
+  let skipped = 0
+  const filtered = content.filter(block => {
+    if (block.type !== 'tool_use') {
+      return true
+    }
+    const signature = getToolCallSignature(block.name, block.input)
+    if (!seen.has(signature)) {
+      seen.add(signature)
+      return true
+    }
+    skipped += 1
+    return false
+  })
+
+  if (skipped > 0 && !filtered.some(block => block.type === 'tool_use')) {
+    filtered.push({
+      type: 'text',
+      text: '已跳过重复的工具调用，避免再次执行同一动作。',
+    } as BetaContentBlock)
+  }
+
+  return { content: filtered, skipped }
+}
+
+function getSeenToolCallSignatures(messages: Message[]): Set<string> {
+  const signatures = new Set<string>()
+  const erroredToolUseIDs = getErroredToolUseIDs(messages)
+  for (const message of messages) {
+    if (message.type !== 'assistant') {
+      continue
+    }
+    const content = message.message.content
+    if (!Array.isArray(content)) {
+      continue
+    }
+    for (const block of content) {
+      if (block.type === 'tool_use') {
+        if (erroredToolUseIDs.has(block.id)) {
+          continue
+        }
+        signatures.add(getToolCallSignature(block.name, block.input))
+      }
+    }
+  }
+  return signatures
+}
+
+function getErroredToolUseIDs(messages: Message[]): Set<string> {
+  const ids = new Set<string>()
+  for (const message of messages) {
+    if (message.type !== 'user') {
+      continue
+    }
+    const content = message.message.content
+    if (!Array.isArray(content)) {
+      continue
+    }
+    for (const block of content) {
+      if (block.type === 'tool_result' && block.is_error === true) {
+        ids.add(block.tool_use_id)
+      }
+    }
+  }
+  return ids
+}
+
+function getToolCallSignature(name: string, input: unknown): string {
+  return `${name}:${stableStringify(normalizeToolCallInputForSignature(input))}`
+}
+
+function normalizeToolCallInputForSignature(input: unknown): unknown {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return input
+  }
+  const normalized = { ...(input as Record<string, unknown>) }
+  delete normalized.description
+  return normalized
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`
+  }
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).sort(
+      ([a], [b]) => a.localeCompare(b),
+    )
+    return `{${entries
+      .map(
+        ([key, entryValue]) =>
+          `${JSON.stringify(key)}:${stableStringify(entryValue)}`,
+      )
+      .join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
 async function* queryModel(
   messages: Message[],
   systemPrompt: SystemPrompt,
@@ -1354,6 +1465,19 @@ async function* queryModel(
   const injectChromeHere =
     useToolSearch && hasChromeTools && !isMcpInstructionsDeltaEnabled()
 
+  const secaiToolMode = getSecAIToolMode()
+  const secaiDSMLToolUseInstructions =
+    isSecAIActive() && secaiToolMode === 'dsml'
+    ? getSecAIDSMLToolUseInstructions(filteredTools)
+    : null
+  if (secaiDSMLToolUseInstructions) {
+    appendSecAILog('dsml_tool_prompt_injected', {
+      mode: secaiToolMode,
+      tool_count: filteredTools.length,
+      tools: filteredTools.map(tool => tool.name).sort().join(','),
+    })
+  }
+
   // filter(Boolean) works by converting each element to a boolean - empty strings become false and are filtered out.
   systemPrompt = asSystemPrompt(
     [
@@ -1365,6 +1489,7 @@ async function* queryModel(
       ...systemPrompt,
       ...(advisorModel ? [ADVISOR_TOOL_INSTRUCTIONS] : []),
       ...(injectChromeHere ? [CHROME_TOOL_SEARCH_INSTRUCTIONS] : []),
+      ...(secaiDSMLToolUseInstructions ? [secaiDSMLToolUseInstructions] : []),
     ].filter(Boolean),
   )
 
@@ -2189,14 +2314,46 @@ async function* queryModel(
               })
               throw new Error('Message not found')
             }
+            let normalizedContent = normalizeContentFromAPI(
+              [contentBlock] as BetaContentBlock[],
+              tools,
+              options.agentId,
+            )
+            const secaiToolMode = getSecAIToolMode()
+            if (
+              isSecAIActive() &&
+              secaiToolMode !== 'native' &&
+              contentBlock.type === 'text'
+            ) {
+              const dsmlContent = normalizeDSMLToolCallsFromText(
+                contentBlock.text,
+                tools,
+              )
+              if (dsmlContent) {
+                const dedupedDSMLContent = filterRepeatedSecAIToolCalls(
+                  dsmlContent,
+                  messages,
+                )
+                const toolNames = dedupedDSMLContent.content
+                  .filter(block => block.type === 'tool_use')
+                  .map(block => ('name' in block ? block.name : 'unknown'))
+                appendSecAILog('dsml_tool_calls_converted', {
+                  tool_count: toolNames.length,
+                  tools: toolNames.join(','),
+                  duplicate_count: dedupedDSMLContent.skipped,
+                })
+                normalizedContent = normalizeContentFromAPI(
+                  dedupedDSMLContent.content,
+                  tools,
+                  options.agentId,
+                )
+              }
+            }
+
             const m: AssistantMessage = {
               message: {
                 ...partialMessage,
-                content: normalizeContentFromAPI(
-                  [contentBlock] as BetaContentBlock[],
-                  tools,
-                  options.agentId,
-                ),
+                content: normalizedContent,
               },
               requestId: streamRequestId ?? undefined,
               type: 'assistant',
@@ -3348,7 +3505,7 @@ export async function queryWithModel({
 }
 
 // Non-streaming requests have a 10min max per the docs:
-// https://platform.claude.com/docs/en/api/errors#long-requests
+// https://platform.secai.com/docs/en/api/errors#long-requests
 // The SDK's 21333-token cap is derived from 10min × 128k tokens/hour, but we
 // bypass it by setting a client-level timeout, so we can cap higher.
 export const MAX_NON_STREAMING_TOKENS = 64_000

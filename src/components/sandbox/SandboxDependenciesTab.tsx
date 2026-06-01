@@ -54,7 +54,7 @@ export function SandboxDependenciesTab(t0) {
     const rgInstallHint = isMac ? "brew install ripgrep" : "apt install ripgrep";
     let t6;
     if ($[13] === Symbol.for("react.memo_cache_sentinel")) {
-      t6 = isMac && <Box flexDirection="column"><Text>seatbelt: <Text color="success">built-in (macOS)</Text></Text></Box>;
+      t6 = isMac && <Box flexDirection="column"><Text>seatbelt：<Text color="success">内置（macOS）</Text></Text></Box>;
       $[13] = t6;
     } else {
       t6 = $[13];
@@ -62,7 +62,7 @@ export function SandboxDependenciesTab(t0) {
     let t7;
     let t8;
     if ($[14] !== rgMissing) {
-      t7 = <Text>ripgrep (rg):{" "}{rgMissing ? <Text color="error">not found</Text> : <Text color="success">found</Text>}</Text>;
+      t7 = <Text>ripgrep (rg)：{" "}{rgMissing ? <Text color="error">未找到</Text> : <Text color="success">已找到</Text>}</Text>;
       t8 = rgMissing && <Text dimColor={true}>{"  "}· {rgInstallHint}</Text>;
       $[14] = rgMissing;
       $[15] = t7;
@@ -82,7 +82,7 @@ export function SandboxDependenciesTab(t0) {
     }
     let t10;
     if ($[20] !== bwrapMissing || $[21] !== seccompMissing || $[22] !== socatMissing) {
-      t10 = !isMac && <><Box flexDirection="column"><Text>bubblewrap (bwrap):{" "}{bwrapMissing ? <Text color="error">not installed</Text> : <Text color="success">installed</Text>}</Text>{bwrapMissing && <Text dimColor={true}>{"  "}· apt install bubblewrap</Text>}</Box><Box flexDirection="column"><Text>socat:{" "}{socatMissing ? <Text color="error">not installed</Text> : <Text color="success">installed</Text>}</Text>{socatMissing && <Text dimColor={true}>{"  "}· apt install socat</Text>}</Box><Box flexDirection="column"><Text>seccomp filter:{" "}{seccompMissing ? <Text color="warning">not installed</Text> : <Text color="success">installed</Text>}{seccompMissing && <Text dimColor={true}> (required to block unix domain sockets)</Text>}</Text>{seccompMissing && <Box flexDirection="column"><Text dimColor={true}>{"  "}· npm install -g @anthropic-ai/sandbox-runtime</Text><Text dimColor={true}>{"  "}· or copy vendor/seccomp/* from sandbox-runtime and set</Text><Text dimColor={true}>{"    "}sandbox.seccomp.bpfPath and applyPath in settings.json</Text></Box>}</Box></>;
+      t10 = !isMac && <><Box flexDirection="column"><Text>bubblewrap (bwrap)：{" "}{bwrapMissing ? <Text color="error">未安装</Text> : <Text color="success">已安装</Text>}</Text>{bwrapMissing && <Text dimColor={true}>{"  "}· apt install bubblewrap</Text>}</Box><Box flexDirection="column"><Text>socat：{" "}{socatMissing ? <Text color="error">未安装</Text> : <Text color="success">已安装</Text>}</Text>{socatMissing && <Text dimColor={true}>{"  "}· apt install socat</Text>}</Box><Box flexDirection="column"><Text>seccomp 过滤器：{" "}{seccompMissing ? <Text color="warning">未安装</Text> : <Text color="success">已安装</Text>}{seccompMissing && <Text dimColor={true}>（用于阻止 Unix 域套接字）</Text>}</Text>{seccompMissing && <Box flexDirection="column"><Text dimColor={true}>{"  "}· npm install -g @anthropic-ai/sandbox-runtime</Text><Text dimColor={true}>{"  "}· 或从 sandbox-runtime 复制 vendor/seccomp/* 并设置</Text><Text dimColor={true}>{"    "}settings.json 中的 sandbox.seccomp.bpfPath 和 applyPath</Text></Box>}</Box></>;
       $[20] = bwrapMissing;
       $[21] = seccompMissing;
       $[22] = socatMissing;

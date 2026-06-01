@@ -25,9 +25,7 @@ const MAX_IMPRESSIONS = 3;
  *   (welcome feed, tips).
  */
 export function isEligibleForOverageCreditGrant(): boolean {
-  const info = getCachedOverageCreditGrant();
-  if (!info || !info.available || info.granted) return false;
-  return formatGrantAmount(info) !== null;
+  return false;
 }
 export function shouldShowOverageCreditUpsell(): boolean {
   if (!isEligibleForOverageCreditGrant()) return false;
@@ -69,14 +67,14 @@ export function incrementOverageCreditUpsellSeenCount(): void {
 
 // Copy from "OC & Bulk Overages copy" doc (#6 — CLI /usage)
 function getUsageText(amount: string): string {
-  return `${amount} in extra usage for third-party apps · /extra-usage`;
+  return `${amount} 可用额度`;
 }
 
 // Copy from "OC & Bulk Overages copy" doc (#4 — CLI Welcome screen).
 // Char budgets: title ≤19, subtitle ≤48.
-const FEED_SUBTITLE = 'On us. Works on third-party apps · /extra-usage';
+const FEED_SUBTITLE = '可用于当前账号';
 function getFeedTitle(amount: string): string {
-  return `${amount} in extra usage`;
+  return `${amount} 可用额度`;
 }
 type Props = {
   maxWidth?: number;
@@ -153,7 +151,7 @@ export function OverageCreditUpsell(t0) {
 export function createOverageCreditFeed(): FeedConfig {
   const info = getCachedOverageCreditGrant();
   const amount = info ? formatGrantAmount(info) : null;
-  const title = amount ? getFeedTitle(amount) : 'extra usage credit';
+  const title = amount ? getFeedTitle(amount) : '可用额度';
   return {
     title,
     lines: [],

@@ -1,6 +1,5 @@
 import { c as _c } from "react/compiler-runtime";
 import React, { useEffect, useMemo, useState } from 'react';
-import { extraUsage } from 'src/commands/extra-usage/index.js';
 import { Box, Text } from 'src/ink.js';
 import { useClaudeAiLimits } from 'src/services/claudeAiLimitsHook.js';
 import { shouldProcessMockLimits } from 'src/services/rateLimitMocking.js'; // Used for /mock-limits command
@@ -25,25 +24,22 @@ export function getUpsellMessage({
 }: UpsellParams): string | null {
   if (!shouldShowUpsell) return null;
   if (isMax20x) {
-    if (isExtraUsageCommandEnabled) {
-      return '/extra-usage to finish what you\u2019re working on.';
-    }
-    return '/login to switch to an API usage-billed account.';
+    return '/login 切换账号后继续使用。';
   }
   if (shouldAutoOpenRateLimitOptionsMenu) {
-    return 'Opening your options\u2026';
+    return '请稍后重试，或联系管理员调整用量。';
   }
   if (!isTeamOrEnterprise && !isExtraUsageCommandEnabled) {
-    return '/upgrade to increase your usage limit.';
+    return '请稍后重试，或调整套餐后继续使用。';
   }
   if (isTeamOrEnterprise) {
     if (!isExtraUsageCommandEnabled) return null;
     if (hasBillingAccess) {
-      return '/extra-usage to finish what you\u2019re working on.';
+      return '请联系管理员调整用量。';
     }
-    return '/extra-usage to request more usage from your admin.';
+    return '请向管理员申请更多用量。';
   }
-  return '/upgrade or /extra-usage to finish what you\u2019re working on.';
+  return '请稍后重试，或调整套餐后继续使用。';
 }
 type RateLimitMessageProps = {
   text: string;
@@ -112,7 +108,7 @@ export function RateLimitMessage(t0) {
       t7 = getUpsellMessage({
         shouldShowUpsell,
         isMax20x,
-        isExtraUsageCommandEnabled: extraUsage.isEnabled(),
+        isExtraUsageCommandEnabled: false,
         shouldAutoOpenRateLimitOptionsMenu: !!shouldAutoOpenRateLimitOptionsMenu,
         isTeamOrEnterprise,
         hasBillingAccess: hasClaudeAiBillingAccess()

@@ -55,11 +55,12 @@ export function KeyboardShortcutHint(t0) {
     t3 = $[2];
   }
   const shortcutText = t3;
+  const actionText = getShortcutActionLabel(action);
   if (parens) {
     let t4;
-    if ($[3] !== action || $[4] !== shortcutText) {
-      t4 = <Text>({shortcutText} to {action})</Text>;
-      $[3] = action;
+    if ($[3] !== actionText || $[4] !== shortcutText) {
+      t4 = <Text>({shortcutText} {actionText})</Text>;
+      $[3] = actionText;
       $[4] = shortcutText;
       $[5] = t4;
     } else {
@@ -68,9 +69,9 @@ export function KeyboardShortcutHint(t0) {
     return t4;
   }
   let t4;
-  if ($[6] !== action || $[7] !== shortcutText) {
-    t4 = <Text>{shortcutText} to {action}</Text>;
-    $[6] = action;
+  if ($[6] !== actionText || $[7] !== shortcutText) {
+    t4 = <Text>{shortcutText} {actionText}</Text>;
+    $[6] = actionText;
     $[7] = shortcutText;
     $[8] = t4;
   } else {
@@ -78,4 +79,72 @@ export function KeyboardShortcutHint(t0) {
   }
   return t4;
 }
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJSZWFjdCIsIlRleHQiLCJQcm9wcyIsInNob3J0Y3V0IiwiYWN0aW9uIiwicGFyZW5zIiwiYm9sZCIsIktleWJvYXJkU2hvcnRjdXRIaW50IiwidDAiLCIkIiwiX2MiLCJ0MSIsInQyIiwidW5kZWZpbmVkIiwidDMiLCJzaG9ydGN1dFRleHQiLCJ0NCJdLCJzb3VyY2VzIjpbIktleWJvYXJkU2hvcnRjdXRIaW50LnRzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgUmVhY3QgZnJvbSAncmVhY3QnXG5pbXBvcnQgVGV4dCBmcm9tICcuLi8uLi9pbmsvY29tcG9uZW50cy9UZXh0LmpzJ1xuXG50eXBlIFByb3BzID0ge1xuICAvKiogVGhlIGtleSBvciBjaG9yZCB0byBkaXNwbGF5IChlLmcuLCBcImN0cmwrb1wiLCBcIkVudGVyXCIsIFwi4oaRL+KGk1wiKSAqL1xuICBzaG9ydGN1dDogc3RyaW5nXG4gIC8qKiBUaGUgYWN0aW9uIHRoZSBrZXkgcGVyZm9ybXMgKGUuZy4sIFwiZXhwYW5kXCIsIFwic2VsZWN0XCIsIFwibmF2aWdhdGVcIikgKi9cbiAgYWN0aW9uOiBzdHJpbmdcbiAgLyoqIFdoZXRoZXIgdG8gd3JhcCB0aGUgaGludCBpbiBwYXJlbnRoZXNlcy4gRGVmYXVsdDogZmFsc2UgKi9cbiAgcGFyZW5zPzogYm9vbGVhblxuICAvKiogV2hldGhlciB0byByZW5kZXIgdGhlIHNob3J0Y3V0IGluIGJvbGQuIERlZmF1bHQ6IGZhbHNlICovXG4gIGJvbGQ/OiBib29sZWFuXG59XG5cbi8qKlxuICogUmVuZGVycyBhIGtleWJvYXJkIHNob3J0Y3V0IGhpbnQgbGlrZSBcImN0cmwrbyB0byBleHBhbmRcIiBvciBcIih0YWIgdG8gdG9nZ2xlKVwiXG4gKlxuICogV3JhcCBpbiA8VGV4dCBkaW1Db2xvcj4gZm9yIHRoZSBjb21tb24gZGltIHN0eWxpbmcuXG4gKlxuICogQGV4YW1wbGVcbiAqIC8vIFNpbXBsZSBoaW50IHdyYXBwZWQgaW4gZGltIFRleHRcbiAqIDxUZXh0IGRpbUNvbG9yPjxLZXlib2FyZFNob3J0Y3V0SGludCBzaG9ydGN1dD1cImVzY1wiIGFjdGlvbj1cImNhbmNlbFwiIC8+PC9UZXh0PlxuICpcbiAqIC8vIFdpdGggcGFyZW50aGVzZXM6IFwiKGN0cmwrbyB0byBleHBhbmQpXCJcbiAqIDxUZXh0IGRpbUNvbG9yPjxLZXlib2FyZFNob3J0Y3V0SGludCBzaG9ydGN1dD1cImN0cmwrb1wiIGFjdGlvbj1cImV4cGFuZFwiIHBhcmVucyAvPjwvVGV4dD5cbiAqXG4gKiAvLyBXaXRoIGJvbGQgc2hvcnRjdXQ6IFwiRW50ZXIgdG8gY29uZmlybVwiIChFbnRlciBpcyBib2xkKVxuICogPFRleHQgZGltQ29sb3I+PEtleWJvYXJkU2hvcnRjdXRIaW50IHNob3J0Y3V0PVwiRW50ZXJcIiBhY3Rpb249XCJjb25maXJtXCIgYm9sZCAvPjwvVGV4dD5cbiAqXG4gKiAvLyBNdWx0aXBsZSBoaW50cyB3aXRoIG1pZGRvdCBzZXBhcmF0b3IgLSB1c2UgQnlsaW5lXG4gKiA8VGV4dCBkaW1Db2xvcj5cbiAqICAgPEJ5bGluZT5cbiAqICAgICA8S2V5Ym9hcmRTaG9ydGN1dEhpbnQgc2hvcnRjdXQ9XCJFbnRlclwiIGFjdGlvbj1cImNvbmZpcm1cIiAvPlxuICogICAgIDxLZXlib2FyZFNob3J0Y3V0SGludCBzaG9ydGN1dD1cIkVzY1wiIGFjdGlvbj1cImNhbmNlbFwiIC8+XG4gKiAgIDwvQnlsaW5lPlxuICogPC9UZXh0PlxuICovXG5leHBvcnQgZnVuY3Rpb24gS2V5Ym9hcmRTaG9ydGN1dEhpbnQoe1xuICBzaG9ydGN1dCxcbiAgYWN0aW9uLFxuICBwYXJlbnMgPSBmYWxzZSxcbiAgYm9sZCA9IGZhbHNlLFxufTogUHJvcHMpOiBSZWFjdC5SZWFjdE5vZGUge1xuICBjb25zdCBzaG9ydGN1dFRleHQgPSBib2xkID8gPFRleHQgYm9sZD57c2hvcnRjdXR9PC9UZXh0PiA6IHNob3J0Y3V0XG5cbiAgaWYgKHBhcmVucykge1xuICAgIHJldHVybiAoXG4gICAgICA8VGV4dD5cbiAgICAgICAgKHtzaG9ydGN1dFRleHR9IHRvIHthY3Rpb259KVxuICAgICAgPC9UZXh0PlxuICAgIClcbiAgfVxuICByZXR1cm4gKFxuICAgIDxUZXh0PlxuICAgICAge3Nob3J0Y3V0VGV4dH0gdG8ge2FjdGlvbn1cbiAgICA8L1RleHQ+XG4gIClcbn1cbiJdLCJtYXBwaW5ncyI6IjtBQUFBLE9BQU9BLEtBQUssTUFBTSxPQUFPO0FBQ3pCLE9BQU9DLElBQUksTUFBTSw4QkFBOEI7QUFFL0MsS0FBS0MsS0FBSyxHQUFHO0VBQ1g7RUFDQUMsUUFBUSxFQUFFLE1BQU07RUFDaEI7RUFDQUMsTUFBTSxFQUFFLE1BQU07RUFDZDtFQUNBQyxNQUFNLENBQUMsRUFBRSxPQUFPO0VBQ2hCO0VBQ0FDLElBQUksQ0FBQyxFQUFFLE9BQU87QUFDaEIsQ0FBQzs7QUFFRDtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsT0FBTyxTQUFBQyxxQkFBQUMsRUFBQTtFQUFBLE1BQUFDLENBQUEsR0FBQUMsRUFBQTtFQUE4QjtJQUFBUCxRQUFBO0lBQUFDLE1BQUE7SUFBQUMsTUFBQSxFQUFBTSxFQUFBO0lBQUFMLElBQUEsRUFBQU07RUFBQSxJQUFBSixFQUs3QjtFQUZOLE1BQUFILE1BQUEsR0FBQU0sRUFBYyxLQUFkRSxTQUFjLEdBQWQsS0FBYyxHQUFkRixFQUFjO0VBQ2QsTUFBQUwsSUFBQSxHQUFBTSxFQUFZLEtBQVpDLFNBQVksR0FBWixLQUFZLEdBQVpELEVBQVk7RUFBQSxJQUFBRSxFQUFBO0VBQUEsSUFBQUwsQ0FBQSxRQUFBSCxJQUFBLElBQUFHLENBQUEsUUFBQU4sUUFBQTtJQUVTVyxFQUFBLEdBQUFSLElBQUksR0FBRyxDQUFDLElBQUksQ0FBQyxJQUFJLENBQUosS0FBRyxDQUFDLENBQUVILFNBQU8sQ0FBRSxFQUFwQixJQUFJLENBQWtDLEdBQTlDQSxRQUE4QztJQUFBTSxDQUFBLE1BQUFILElBQUE7SUFBQUcsQ0FBQSxNQUFBTixRQUFBO0lBQUFNLENBQUEsTUFBQUssRUFBQTtFQUFBO0lBQUFBLEVBQUEsR0FBQUwsQ0FBQTtFQUFBO0VBQW5FLE1BQUFNLFlBQUEsR0FBcUJELEVBQThDO0VBRW5FLElBQUlULE1BQU07SUFBQSxJQUFBVyxFQUFBO0lBQUEsSUFBQVAsQ0FBQSxRQUFBTCxNQUFBLElBQUFLLENBQUEsUUFBQU0sWUFBQTtNQUVOQyxFQUFBLElBQUMsSUFBSSxDQUFDLENBQ0ZELGFBQVcsQ0FBRSxJQUFLWCxPQUFLLENBQUUsQ0FDN0IsRUFGQyxJQUFJLENBRUU7TUFBQUssQ0FBQSxNQUFBTCxNQUFBO01BQUFLLENBQUEsTUFBQU0sWUFBQTtNQUFBTixDQUFBLE1BQUFPLEVBQUE7SUFBQTtNQUFBQSxFQUFBLEdBQUFQLENBQUE7SUFBQTtJQUFBLE9BRlBPLEVBRU87RUFBQTtFQUVWLElBQUFBLEVBQUE7RUFBQSxJQUFBUCxDQUFBLFFBQUFMLE1BQUEsSUFBQUssQ0FBQSxRQUFBTSxZQUFBO0lBRUNDLEVBQUEsSUFBQyxJQUFJLENBQ0ZELGFBQVcsQ0FBRSxJQUFLWCxPQUFLLENBQzFCLEVBRkMsSUFBSSxDQUVFO0lBQUFLLENBQUEsTUFBQUwsTUFBQTtJQUFBSyxDQUFBLE1BQUFNLFlBQUE7SUFBQU4sQ0FBQSxNQUFBTyxFQUFBO0VBQUE7SUFBQUEsRUFBQSxHQUFBUCxDQUFBO0VBQUE7RUFBQSxPQUZQTyxFQUVPO0FBQUEiLCJpZ25vcmVMaXN0IjpbXX0=
+
+function getShortcutActionLabel(action: string): string {
+  switch (action) {
+    case 'cancel':
+      return '取消'
+    case 'details':
+      return '查看详情'
+    case 'dismiss':
+      return '关闭'
+    case 'confirm':
+      return '确认'
+    case 'copy':
+      return '复制'
+    case 'cycle':
+      return '切换'
+    case 'edit':
+      return '编辑'
+    case 'hide':
+      return '隐藏'
+    case 'hide tasks':
+      return '隐藏任务'
+    case 'interrupt':
+      return '中断'
+    case 'manage':
+      return '管理'
+    case 'native select':
+      return '原生选择'
+    case 'navigate':
+      return '导航'
+    case 'next':
+      return '下一个'
+    case 'prev':
+      return '上一个'
+    case 'previous':
+      return '上一个'
+    case 'remove':
+      return '移除'
+    case 'resolve':
+      return '处理'
+    case 'return to team lead':
+      return '返回主会话'
+    case 'select':
+      return '选择'
+    case 'go back':
+      return '返回'
+    case 'apply':
+      return '应用'
+    case 'apply changes':
+      return '应用更改'
+    case 'auth':
+      return '认证'
+    case 'authenticate':
+      return '认证'
+    case 'show tasks':
+      return '显示任务'
+    case 'show teammates':
+      return '显示智能体'
+    case 'stop agents':
+      return '停止智能体'
+    case 'update':
+      return '更新'
+    case 'view tasks':
+      return '查看任务'
+    case 'write to file':
+      return '写入文件'
+    default:
+      return action
+  }
+}

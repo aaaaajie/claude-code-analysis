@@ -38,7 +38,7 @@ import { useAnimationFrame } from '../ink.js';
 import { getGlobalConfig } from '../utils/config.js';
 export type { SpinnerMode } from './Spinner/index.js';
 const DEFAULT_CHARACTERS = getDefaultCharacters();
-const SPINNER_FRAMES = [...DEFAULT_CHARACTERS, ...[...DEFAULT_CHARACTERS].reverse()];
+const SPINNER_FRAMES = DEFAULT_CHARACTERS;
 type Props = {
   mode: SpinnerMode;
   loadingStartTimeRef: React.RefObject<number>;
@@ -256,7 +256,7 @@ function SpinnerWithVerbInner({
   const tipsEnabled = settings.spinnerTipsEnabled !== false;
   const showClearTip = tipsEnabled && elapsedSnapshot > 1_800_000;
   const showBtwTip = tipsEnabled && elapsedSnapshot > 30_000 && !getGlobalConfig().btwUseCount;
-  const effectiveTip = contextTipsActive ? undefined : showClearTip && !nextTask ? 'Use /clear to start fresh when switching topics and free up context' : showBtwTip && !nextTask ? "Use /btw to ask a quick side question without interrupting Claude's current work" : spinnerTip;
+  const effectiveTip = contextTipsActive ? undefined : showClearTip && !nextTask ? '切换话题时可用 /clear 开启新上下文' : showBtwTip && !nextTask ? "可用 /btw 快速提问，不打断 SecAI 当前工作" : spinnerTip;
 
   // Budget text (ant-only) — shown above the tip line
   let budgetText: string | null = null;
@@ -512,7 +512,7 @@ export function Spinner() {
   if (reducedMotion) {
     let t0;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t0 = <Text color="text">●</Text>;
+      t0 = <Text color="claude">●</Text>;
       $[0] = t0;
     } else {
       t0 = $[0];
@@ -531,7 +531,7 @@ export function Spinner() {
   const t0 = SPINNER_FRAMES[frame];
   let t1;
   if ($[3] !== t0) {
-    t1 = <Text color="text">{t0}</Text>;
+    t1 = <Text color="claude">{t0}</Text>;
     $[3] = t0;
     $[4] = t1;
   } else {

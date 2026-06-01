@@ -10,7 +10,6 @@ import clear from './commands/clear/index.js'
 import color from './commands/color/index.js'
 import commit from './commands/commit.js'
 import copy from './commands/copy/index.js'
-import desktop from './commands/desktop/index.js'
 import commitPushPr from './commands/commit-push-pr.js'
 import compact from './commands/compact/index.js'
 import config from './commands/config/index.js'
@@ -18,28 +17,22 @@ import { context, contextNonInteractive } from './commands/context/index.js'
 import cost from './commands/cost/index.js'
 import diff from './commands/diff/index.js'
 import ctx_viz from './commands/ctx_viz/index.js'
-import doctor from './commands/doctor/index.js'
 import memory from './commands/memory/index.js'
 import help from './commands/help/index.js'
-import ide from './commands/ide/index.js'
 import init from './commands/init.js'
 import initVerifiers from './commands/init-verifiers.js'
 import keybindings from './commands/keybindings/index.js'
-import login from './commands/login/index.js'
 import logout from './commands/logout/index.js'
-import installGitHubApp from './commands/install-github-app/index.js'
-import installSlackApp from './commands/install-slack-app/index.js'
 import breakCache from './commands/break-cache/index.js'
 import mcp from './commands/mcp/index.js'
-import mobile from './commands/mobile/index.js'
 import onboarding from './commands/onboarding/index.js'
-import pr_comments from './commands/pr_comments/index.js'
-import releaseNotes from './commands/release-notes/index.js'
+import recharge from './commands/recharge/index.js'
 import rename from './commands/rename/index.js'
 import resume from './commands/resume/index.js'
 import review, { ultrareview } from './commands/review.js'
-import session from './commands/session/index.js'
+import secai from './commands/secai/index.js'
 import share from './commands/share/index.js'
+import skillInstall from './commands/skill-install/index.js'
 import skills from './commands/skills/index.js'
 import status from './commands/status/index.js'
 import tasks from './commands/tasks/index.js'
@@ -70,13 +63,6 @@ const briefCommand =
 const assistantCommand = feature('KAIROS')
   ? require('./commands/assistant/index.js').default
   : null
-const bridge = feature('BRIDGE_MODE')
-  ? require('./commands/bridge/index.js').default
-  : null
-const remoteControlServerCommand =
-  feature('DAEMON') && feature('BRIDGE_MODE')
-    ? require('./commands/remoteControlServer/index.js').default
-    : null
 const voiceCommand = feature('VOICE_MODE')
   ? require('./commands/voice/index.js').default
   : null
@@ -86,11 +72,6 @@ const forceSnip = feature('HISTORY_SNIP')
 const workflowsCmd = feature('WORKFLOW_SCRIPTS')
   ? (
       require('./commands/workflows/index.js') as typeof import('./commands/workflows/index.js')
-    ).default
-  : null
-const webCmd = feature('CCR_REMOTE_SETUP')
-  ? (
-      require('./commands/remote-setup/index.js') as typeof import('./commands/remote-setup/index.js')
     ).default
   : null
 const clearSkillIndexCache = feature('EXPERIMENTAL_SKILL_SEARCH')
@@ -121,13 +102,10 @@ const buddy = feature('BUDDY')
     ).default
   : null
 /* eslint-enable @typescript-eslint/no-require-imports */
-import thinkback from './commands/thinkback/index.js'
-import thinkbackPlay from './commands/thinkback-play/index.js'
 import permissions from './commands/permissions/index.js'
 import plan from './commands/plan/index.js'
 import fast from './commands/fast/index.js'
 import passes from './commands/passes/index.js'
-import privacySettings from './commands/privacy-settings/index.js'
 import hooks from './commands/hooks/index.js'
 import files from './commands/files/index.js'
 import branch from './commands/branch/index.js'
@@ -135,7 +113,6 @@ import agents from './commands/agents/index.js'
 import plugin from './commands/plugin/index.js'
 import reloadPlugins from './commands/reload-plugins/index.js'
 import rewind from './commands/rewind/index.js'
-import heapDump from './commands/heapdump/index.js'
 import mockLimits from './commands/mock-limits/index.js'
 import bridgeKick from './commands/bridge-kick.js'
 import version from './commands/version.js'
@@ -148,8 +125,6 @@ import antTrace from './commands/ant-trace/index.js'
 import perfIssue from './commands/perf-issue/index.js'
 import sandboxToggle from './commands/sandbox-toggle/index.js'
 import chrome from './commands/chrome/index.js'
-import stickers from './commands/stickers/index.js'
-import advisor from './commands/advisor.js'
 import { logError } from './utils/log.js'
 import { toError } from './utils/errors.js'
 import { logForDebugging } from './utils/debug.js'
@@ -175,13 +150,7 @@ import exportCommand from './commands/export/index.js'
 import model from './commands/model/index.js'
 import tag from './commands/tag/index.js'
 import outputStyle from './commands/output-style/index.js'
-import remoteEnv from './commands/remote-env/index.js'
 import upgrade from './commands/upgrade/index.js'
-import {
-  extraUsage,
-  extraUsageNonInteractive,
-} from './commands/extra-usage/index.js'
-import rateLimitOptions from './commands/rate-limit-options/index.js'
 import statusline from './commands/statusline.js'
 import effort from './commands/effort/index.js'
 import stats from './commands/stats/index.js'
@@ -190,9 +159,9 @@ import stats from './commands/stats/index.js'
 const usageReport: Command = {
   type: 'prompt',
   name: 'insights',
-  description: 'Generate a report analyzing your Claude Code sessions',
+  description: '生成会话分析报告',
   contentLength: 0,
-  progressMessage: 'analyzing your sessions',
+  progressMessage: '正在分析会话',
   source: 'builtin',
   async getPromptForCommand(args, context) {
     const real = (await import('./commands/insights.js')).default
@@ -257,7 +226,6 @@ export const INTERNAL_ONLY_COMMANDS = [
 // since underlying functions read from config, which can't be read at module initialization time
 const COMMANDS = memoize((): Command[] => [
   addDir,
-  advisor,
   agents,
   branch,
   btw,
@@ -267,74 +235,56 @@ const COMMANDS = memoize((): Command[] => [
   compact,
   config,
   copy,
-  desktop,
   context,
   contextNonInteractive,
   cost,
   diff,
-  doctor,
-  effort,
   exit,
   fast,
   files,
-  heapDump,
+  effort,
   help,
-  ide,
   init,
   keybindings,
-  installGitHubApp,
-  installSlackApp,
   mcp,
   memory,
-  mobile,
   model,
   outputStyle,
-  remoteEnv,
   plugin,
-  pr_comments,
-  releaseNotes,
+  recharge,
   reloadPlugins,
   rename,
   resume,
-  session,
   skills,
   stats,
   status,
   statusline,
-  stickers,
   tag,
   theme,
   feedback,
   review,
+  secai,
+  skillInstall,
   ultrareview,
   rewind,
   securityReview,
   terminalSetup,
   upgrade,
-  extraUsage,
-  extraUsageNonInteractive,
-  rateLimitOptions,
   usage,
   usageReport,
   vim,
-  ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
   ...(buddy ? [buddy] : []),
   ...(proactive ? [proactive] : []),
   ...(briefCommand ? [briefCommand] : []),
   ...(assistantCommand ? [assistantCommand] : []),
-  ...(bridge ? [bridge] : []),
-  ...(remoteControlServerCommand ? [remoteControlServerCommand] : []),
   ...(voiceCommand ? [voiceCommand] : []),
-  thinkback,
-  thinkbackPlay,
   permissions,
   plan,
-  privacySettings,
   hooks,
   exportCommand,
   sandboxToggle,
-  ...(!isUsing3PServices() ? [logout, login()] : []),
+  ...(!isUsing3PServices() ? [logout] : []),
   passes,
   ...(peersCmd ? [peersCmd] : []),
   tasks,
@@ -617,7 +567,6 @@ export const getSlashCommandToolSkills = memoize(
  * 2. Preserving local-only commands in REPL's handleRemoteInit after CCR filters
  */
 export const REMOTE_SAFE_COMMANDS: Set<Command> = new Set([
-  session, // Shows QR code / URL for remote session
   exit, // Exit the TUI
   clear, // Clear screen
   help, // Show help
@@ -632,8 +581,6 @@ export const REMOTE_SAFE_COMMANDS: Set<Command> = new Set([
   plan, // Plan mode toggle
   keybindings, // Keybinding management
   statusline, // Status line toggle
-  stickers, // Stickers
-  mobile, // Mobile QR code
 ])
 
 /**
@@ -654,7 +601,6 @@ export const BRIDGE_SAFE_COMMANDS: Set<Command> = new Set(
     clear, // Wipe transcript
     cost, // Show session cost
     summary, // Summarize conversation
-    releaseNotes, // Show changelog
     files, // List tracked files
   ].filter((c): c is Command => c !== null),
 )
@@ -718,6 +664,170 @@ export function getCommand(commandName: string, commands: Command[]): Command {
   return command
 }
 
+const USER_FACING_COMMAND_DESCRIPTIONS: Record<string, string> = {
+  'Generate a report analyzing your Claude Code sessions':
+    '生成会话分析报告',
+  'Commit, push, and open a PR': '提交、推送并创建 PR',
+  'Open or create your keybindings configuration file':
+    '打开或创建快捷键配置文件',
+  'Show help and available commands': '显示帮助和可用命令',
+  'Exit the REPL': '退出交互会话',
+  'Show your Claude Code usage statistics and activity':
+    '显示 SecAI 使用统计和活动',
+  'Manage allow & deny tool permission rules':
+    '管理工具允许和拒绝权限规则',
+  'Edit Claude memory files': '编辑 SecAI 记忆文件',
+  'Create a branch of the current conversation at this point':
+    '从当前位置创建当前对话分支',
+  'List all files currently in context': '列出当前上下文中的所有文件',
+  'Export the current conversation to a file or clipboard':
+    '导出当前对话到文件或剪贴板',
+  'Set up Claude GitHub Actions for a repository':
+    '为仓库设置 GitHub Actions',
+  'Upgrade to Max for higher rate limits and more Opus':
+    '升级到 Max 以获得更高限额和更多 Opus',
+  'List and manage background tasks': '列出并管理后台任务',
+  'Visualize current context usage as a colored grid':
+    '以彩色网格显示上下文使用情况',
+  'Show current context usage': '显示当前上下文使用情况',
+  'Toggle a searchable tag on the current session':
+    '切换当前会话的可搜索标签',
+  'Toggle between Vim and Normal editing modes':
+    '在 Vim 和普通编辑模式间切换',
+  'Claude in Chrome (Beta) settings': 'Chrome 集成（Beta）设置',
+  'Manage MCP servers': '管理 MCP 服务器',
+  'Set effort level for model usage': '设置模型推理强度',
+  "Set up Claude Code's status line UI": '设置 SecAI 状态栏界面',
+  'List available skills': '列出可用技能',
+  'Install SecAI skills from local paths or GitHub sources':
+    '从本地路径或 GitHub 安装 SecAI 技能',
+  'Enable plan mode or view the current session plan':
+    '启用计划模式或查看当前会话计划',
+  'Install Claude Code native build': '安装 SecAI 原生版本',
+  'Rename the current conversation': '重命名当前对话',
+  'Open config panel': '打开配置面板',
+  'Add a new working directory': '添加新的工作目录',
+  'Show plan usage limits': '显示套餐使用限额',
+  'Resume a previous conversation': '恢复之前的对话',
+  'Sign out from your Anthropic account': '退出当前账号',
+  'View hook configurations for tool events': '查看工具事件的 Hook 配置',
+  'Show the total cost and duration of the current session':
+    '显示当前会话总成本和耗时',
+  'Set the prompt bar color for this session': '设置本会话提示栏颜色',
+  'View uncommitted changes and per-turn diffs':
+    '查看未提交改动和每轮差异',
+  'Manage Claude Code plugins': '管理 SecAI 插件',
+  'Manage agent configurations': '管理智能体配置',
+  'Deprecated: use /config to change output style':
+    '已废弃：使用 /config 更改输出风格',
+  'Toggle brief-only mode': '切换精简模式',
+  'Create a git commit': '创建 Git 提交',
+  'Toggle voice mode': '切换语音模式',
+  'Clear conversation history and free up context':
+    '清空对话历史并释放上下文',
+  'Change the theme': '更改主题',
+  'Review a pull request': '审查 PR',
+  'Activate pending plugin changes in the current session':
+    '激活当前会话中待处理的插件更改',
+  'Manage SecAI login, registration, balance, usage, and model routing':
+    '管理 SecAI 登录、注册、余额、用量和模型',
+}
+
+const USER_FACING_COMMAND_NAME_DESCRIPTIONS: Record<string, string> = {
+  agents: '管理智能体配置',
+  'add-dir': '添加新的工作目录',
+  branch: '从当前位置创建当前对话分支',
+  brief: '切换精简模式',
+  btw: '快速提一个旁路问题，不打断当前主对话',
+  chrome: 'Chrome 集成设置',
+  clear: '清空对话历史并释放上下文',
+  color: '设置本会话提示栏颜色',
+  commit: '创建 Git 提交',
+  'commit-push-pr': '提交、推送并创建 PR',
+  compact: '压缩当前对话',
+  config: '打开配置面板',
+  context: '显示当前上下文使用情况',
+  copy: '复制 SecAI 最近一次回复到剪贴板，可用 /copy N 复制第 N 条最近回复',
+  cost: '显示当前会话总成本和耗时',
+  diff: '查看未提交改动和每轮差异',
+  effort: '设置模型推理强度',
+  exit: '退出交互会话',
+  export: '导出当前对话到文件或剪贴板',
+  fast: '切换快速模式',
+  files: '列出当前上下文中的所有文件',
+  help: '显示帮助和可用命令',
+  hooks: '查看工具事件的 Hook 配置',
+  ide: '管理 IDE 集成并显示状态',
+  init: '初始化项目说明文件',
+  keybindings: '打开或创建快捷键配置文件',
+  login: '登录当前账号',
+  logout: '退出当前账号',
+  mcp: '管理 MCP 服务器',
+  memory: '编辑 SecAI 记忆文件',
+  model: '设置 AI 模型',
+  'output-style': '更改输出风格',
+  permissions: '管理工具权限规则',
+  plan: '启用计划模式或查看当前会话计划',
+  plugin: '管理 SecAI 插件',
+  'reload-plugins': '激活当前会话中待处理的插件更改',
+  rename: '重命名当前对话',
+  resume: '恢复之前的对话',
+  review: '审查 PR',
+  sandbox: '切换沙箱设置',
+  secai: '管理 SecAI',
+  recharge: '查看 SecAI 充值方式和联系方式',
+  'skill-install': '安装 SecAI 技能',
+  skills: '列出可用技能',
+  stats: '显示 SecAI 使用统计和活动',
+  status: '显示版本、模型、账号、API 连接和工具状态',
+  statusline: '设置 SecAI 状态栏界面',
+  tag: '切换当前会话的可搜索标签',
+  tasks: '列出并管理后台任务',
+  todos: '显示当前任务列表',
+  theme: '更改主题',
+  usage: '显示套餐使用限额',
+  vim: '在 Vim 和普通编辑模式间切换',
+  voice: '切换语音模式',
+}
+
+const SETTING_SOURCE_LABELS: Record<string, string> = {
+  user: '用户',
+  project: '项目',
+  'project, gitignored': '项目本地',
+  'cli flag': '命令行参数',
+  managed: '托管',
+}
+
+function localizeCommandDescription(cmd: Command): string {
+  const translated = USER_FACING_COMMAND_DESCRIPTIONS[cmd.description]
+  if (translated) {
+    return translated
+  }
+
+  const commandName = getCommandName(cmd)
+  if (commandName === 'model') {
+    const current = cmd.description.match(/\(currently (.*)\)$/)?.[1]
+    return current ? `设置 AI 模型（当前 ${current}）` : '设置 AI 模型'
+  }
+  if (commandName === 'fast') {
+    const model = cmd.description.match(/\((.*) only\)$/)?.[1]
+    return model ? `切换快速模式（仅 ${model}）` : '切换快速模式'
+  }
+  if (commandName === 'status') {
+    return '显示版本、模型、账号、API 连接和工具状态'
+  }
+
+  const translatedByName = USER_FACING_COMMAND_NAME_DESCRIPTIONS[commandName]
+  if (translatedByName) {
+    return translatedByName
+  }
+
+  return cmd.description
+    .replace(/\bClaude Code\b/g, 'SecAI')
+    .replace(/\bClaude\b/g, 'SecAI')
+    .replace(/\bAnthropic\b/g, '当前')
+}
+
 /**
  * Formats a command's description with its source annotation for user-facing UI.
  * Use this in typeahead, help screens, and other places where users need to see
@@ -726,29 +836,33 @@ export function getCommand(commandName: string, commands: Command[]): Command {
  * For model-facing prompts (like SkillTool), use cmd.description directly.
  */
 export function formatDescriptionWithSource(cmd: Command): string {
+  const description = localizeCommandDescription(cmd)
+
   if (cmd.type !== 'prompt') {
-    return cmd.description
+    return description
   }
 
   if (cmd.kind === 'workflow') {
-    return `${cmd.description} (workflow)`
+    return `${description}（工作流）`
   }
 
   if (cmd.source === 'plugin') {
     const pluginName = cmd.pluginInfo?.pluginManifest.name
     if (pluginName) {
-      return `(${pluginName}) ${cmd.description}`
+      return `（${pluginName}）${description}`
     }
-    return `${cmd.description} (plugin)`
+    return `${description}（插件）`
   }
 
   if (cmd.source === 'builtin' || cmd.source === 'mcp') {
-    return cmd.description
+    return description
   }
 
   if (cmd.source === 'bundled') {
-    return `${cmd.description} (bundled)`
+    return `${description}（内置）`
   }
 
-  return `${cmd.description} (${getSettingSourceName(cmd.source)})`
+  const sourceName = getSettingSourceName(cmd.source)
+  const sourceLabel = SETTING_SOURCE_LABELS[sourceName] ?? sourceName
+  return `${description}（${sourceLabel}）`
 }

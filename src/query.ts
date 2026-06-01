@@ -42,6 +42,7 @@ import {
   PROMPT_TOO_LONG_ERROR_MESSAGE,
   isPromptTooLongMessage,
 } from './services/api/errors.js'
+import { appendSecAILog, isSecAIActive } from './services/secai/client.js'
 import { logAntError, logForDebugging } from './utils/debug.js'
 import {
   createUserMessage,
@@ -226,6 +227,14 @@ export async function* query(
   | ToolUseSummaryMessage,
   Terminal
 > {
+  if (isSecAIActive()) {
+    appendSecAILog('query_enter', {
+      query_source: params.querySource,
+      message_count: params.messages.length,
+      model: params.toolUseContext.options.mainLoopModel,
+      tool_count: params.toolUseContext.options.tools.length,
+    })
+  }
   const consumedCommandUuids: string[] = []
   const terminal = yield* queryLoop(params, consumedCommandUuids)
   // Only reached if queryLoop returned normally. Skipped on throw (error
@@ -550,7 +559,7 @@ async function* queryLoop(
 
     const assistantMessages: AssistantMessage[] = []
     const toolResults: (UserMessage | AttachmentMessage)[] = []
-    // @see https://docs.claude.com/en/docs/build-with-claude/tool-use
+    // @see https://docs.secai.com/en/docs/build-with-claude/tool-use
     // Note: stop_reason === 'tool_use' is unreliable -- it's not always set correctly.
     // Set during streaming whenever a tool_use block arrives — the sole
     // loop-exit signal. If false after streaming, we're done (modulo stop-hook retry).

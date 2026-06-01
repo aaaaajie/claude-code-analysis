@@ -846,11 +846,11 @@ export function to1PEventFormat(
   if (feature('COWORKER_TYPE_TELEMETRY') && envContext.coworkerType) {
     env.coworker_type = envContext.coworkerType
   }
-  if (envContext.claudeCodeContainerId) {
-    env.claude_code_container_id = envContext.claudeCodeContainerId
+  if (envContext.secaiCodeContainerId) {
+    env.secai_code_container_id = envContext.secaiCodeContainerId
   }
-  if (envContext.claudeCodeRemoteSessionId) {
-    env.claude_code_remote_session_id = envContext.claudeCodeRemoteSessionId
+  if (envContext.secaiCodeRemoteSessionId) {
+    env.secai_code_remote_session_id = envContext.secaiCodeRemoteSessionId
   }
   if (envContext.tags) {
     env.tags = envContext.tags

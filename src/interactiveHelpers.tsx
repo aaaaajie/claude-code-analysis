@@ -107,8 +107,15 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     return false;
   }
   const config = getGlobalConfig();
+  if (!config.theme) {
+    saveGlobalConfig(current => ({
+      ...current,
+      theme: 'dark'
+    }));
+    config.theme = 'dark';
+  }
   let onboardingShown = false;
-  if (!config.theme || !config.hasCompletedOnboarding // always show onboarding at least once
+  if (!config.hasCompletedOnboarding // always show onboarding at least once
   ) {
     onboardingShown = true;
     const {
@@ -203,7 +210,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   // Check for custom API key
   // On homespace, ANTHROPIC_API_KEY is preserved in process.env for child
   // processes but ignored by Claude Code itself (see auth.ts).
-  if (process.env.ANTHROPIC_API_KEY && !isRunningOnHomespace()) {
+  if (process.env.ANTHROPIC_API_KEY && process.env.SECAI_ACTIVE !== '1' && !isRunningOnHomespace()) {
     const customApiKeyTruncated = normalizeApiKeyForConfig(process.env.ANTHROPIC_API_KEY);
     const keyStatus = getCustomApiKeyStatus(customApiKeyTruncated);
     if (keyStatus === 'new') {

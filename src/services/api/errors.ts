@@ -534,15 +534,14 @@ export function getAssistantMessageFromError(
       })
     }
 
-    // No quota headers — this is NOT a quota limit. Surface what the API actually
-    // said instead of a generic "Rate limit reached". Entitlement rejections
-    // (e.g. 1M context without Extra Usage) and infra capacity 429s land here.
+    // No quota headers: surface what the API actually said instead of a generic
+    // rate-limit message.
     if (error.message.includes('Extra usage is required for long context')) {
       const hint = getIsNonInteractiveSession()
-        ? 'enable extra usage at claude.ai/settings/usage, or use --model to switch to standard context'
-        : 'run /extra-usage to enable, or /model to switch to standard context'
+        ? '请使用 --model 切换到标准上下文模型'
+        : '请使用 /model 切换到标准上下文模型'
       return createAssistantAPIErrorMessage({
-        content: `${API_ERROR_MESSAGE_PREFIX}: Extra usage is required for 1M context · ${hint}`,
+        content: `${API_ERROR_MESSAGE_PREFIX}: 当前模型需要更高上下文额度 · ${hint}`,
         error: 'rate_limit',
       })
     }
