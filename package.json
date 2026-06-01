@@ -1,6 +1,6 @@
 {
   "name": "secai-cli",
-  "version": "2.1.150-secai",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "bin": {
