@@ -47,4 +47,5 @@ jobs:
             dist/artifacts/secai-*-${{ matrix.target }}-installer.sh
             dist/artifacts/secai-*-${{ matrix.target }}.zip
             dist/artifacts/secai-*-${{ matrix.target }}-installer.ps1
+            dist/update/secai-cli/**
           if-no-files-found: error

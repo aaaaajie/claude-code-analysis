@@ -126,7 +126,7 @@ export function Notifications(t0) {
   }
   useEffect(t5, t6);
   const shouldShowIdeSelection = ideStatus === "connected" && (ideSelection?.filePath || ideSelection?.text && ideSelection.lineCount > 0);
-  const shouldShowAutoUpdater = !isSecAIActive() && (!shouldShowIdeSelection || isAutoUpdating || autoUpdaterResult?.status !== "success");
+  const shouldShowAutoUpdater = !shouldShowIdeSelection || isAutoUpdating || autoUpdaterResult?.status !== "success";
   const isInOverageMode = claudeAiLimits.isUsingOverage;
   let t7;
   if ($[8] === Symbol.for("react.memo_cache_sentinel")) {

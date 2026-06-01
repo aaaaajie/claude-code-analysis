@@ -21,9 +21,8 @@ import { logError } from '../log.js'
 import { sleep } from '../sleep.js'
 import { jsonStringify, writeFileSync_DEPRECATED } from '../slowOperations.js'
 import { getBinaryName, getPlatform } from './installer.js'
+import { getSecAIUpdateBaseURL } from '../secaiUpdateSource.js'
 
-const GCS_BUCKET_URL =
-  'https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases'
 export const ARTIFACTORY_REGISTRY_URL =
   'https://artifactory.infra.ant.dev/artifactory/api/npm/npm-all/'
 
@@ -144,8 +143,7 @@ export async function getLatestVersion(
     return getLatestVersionFromArtifactory(npmTag)
   }
 
-  // Use GCS for external users
-  return getLatestVersionFromBinaryRepo(channel, GCS_BUCKET_URL)
+  return getLatestVersionFromBinaryRepo(channel, getSecAIUpdateBaseURL())
 }
 
 export async function downloadVersionFromArtifactory(
@@ -512,8 +510,11 @@ export async function downloadVersion(
     return 'npm'
   }
 
-  // Use GCS for external users
-  await downloadVersionFromBinaryRepo(version, stagingPath, GCS_BUCKET_URL)
+  await downloadVersionFromBinaryRepo(
+    version,
+    stagingPath,
+    getSecAIUpdateBaseURL(),
+  )
   return 'binary'
 }
 

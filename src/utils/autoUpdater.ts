@@ -26,9 +26,7 @@ import {
   writeFileLines,
 } from './shellConfig.js'
 import { jsonParse } from './slowOperations.js'
-
-const GCS_BUCKET_URL =
-  'https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases'
+import { getSecAIUpdateBaseURL } from './secaiUpdateSource.js'
 
 class AutoUpdaterError extends ClaudeError {}
 
@@ -83,13 +81,11 @@ export async function assertMinVersion(): Promise<void> {
     ) {
       // biome-ignore lint/suspicious/noConsole:: intentional console output
       console.error(`
-It looks like your version of Claude Code (${MACRO.VERSION}) needs an update.
-A newer version (${versionConfig.minVersion} or higher) is required to continue.
+当前 SecAI 版本（${MACRO.VERSION}）过低。
+需要更新到 ${versionConfig.minVersion} 或更高版本后才能继续使用。
 
-To update, please run:
-    claude update
-
-This will ensure you have access to the latest features and improvements.
+请运行：
+    secai update
 `)
       gracefulShutdownSync(1)
     }
@@ -378,26 +374,27 @@ export async function getNpmDistTags(): Promise<NpmDistTags> {
 }
 
 /**
- * Get the latest version from GCS bucket for a given release channel.
+ * Get the latest version from the SecAI update feed for a given release channel.
  * This is used by installations that don't have npm (e.g. package manager installs).
  */
 export async function getLatestVersionFromGcs(
   channel: ReleaseChannel,
 ): Promise<string | null> {
+  const baseUrl = getSecAIUpdateBaseURL()
   try {
-    const response = await axios.get(`${GCS_BUCKET_URL}/${channel}`, {
+    const response = await axios.get(`${baseUrl}/${channel}`, {
       timeout: 5000,
       responseType: 'text',
     })
     return response.data.trim()
   } catch (error) {
-    logForDebugging(`Failed to fetch ${channel} from GCS: ${error}`)
+    logForDebugging(`Failed to fetch ${channel} from ${baseUrl}: ${error}`)
     return null
   }
 }
 
 /**
- * Get available versions from GCS bucket (for native installations).
+ * Get available versions from the SecAI update feed (for native installations).
  * Fetches both latest and stable channel pointers.
  */
 export async function getGcsDistTags(): Promise<NpmDistTags> {
@@ -482,13 +479,13 @@ export async function installGlobalPackage(
       console.error(`
 Error: Windows NPM detected in WSL
 
-You're running Claude Code in WSL but using the Windows NPM installation from /mnt/c/.
+You're running SecAI in WSL but using the Windows NPM installation from /mnt/c/.
 This configuration is not supported for updates.
 
 To fix this issue:
   1. Install Node.js within your Linux distribution: e.g. sudo apt install nodejs npm
   2. Make sure Linux NPM is in your PATH before the Windows version
-  3. Try updating again with 'claude update'
+  3. Try updating again with 'secai update'
 `)
       return 'install_failed'
     }
@@ -513,7 +510,7 @@ To fix this issue:
     )
     if (installResult.code !== 0) {
       const error = new AutoUpdaterError(
-        `Failed to install new version of claude: ${installResult.stdout} ${installResult.stderr}`,
+        `Failed to install new version of SecAI: ${installResult.stdout} ${installResult.stderr}`,
       )
       logError(error)
       return 'install_failed'
@@ -533,7 +530,7 @@ To fix this issue:
 }
 
 /**
- * Remove claude aliases from shell configuration files
+ * Remove SecAI aliases from shell configuration files
  * This helps clean up old installation methods when switching to native or npm global
  */
 async function removeClaudeAliasesFromShellConfigs(): Promise<void> {
@@ -549,7 +546,7 @@ async function removeClaudeAliasesFromShellConfigs(): Promise<void> {
 
       if (hadAlias) {
         await writeFileLines(configFile, filtered)
-        logForDebugging(`Removed claude alias from ${configFile}`)
+        logForDebugging(`Removed SecAI alias from ${configFile}`)
       }
     } catch (error) {
       // Don't fail the whole operation if one file can't be processed

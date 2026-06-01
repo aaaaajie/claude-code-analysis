@@ -3,11 +3,13 @@ import { chmod, rm } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDir = join(root, 'dist')
 const packageRoot = join(distDir, 'package')
 const artifactsDir = join(distDir, 'artifacts')
+const updateRoot = join(distDir, 'update', 'secai-cli')
 const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version
 
 const platformNames = {
@@ -37,9 +39,11 @@ const packageBinDir = join(packageDir, 'bin')
 await rm(packageDir, { recursive: true, force: true })
 mkdirSync(packageBinDir, { recursive: true })
 mkdirSync(artifactsDir, { recursive: true })
+mkdirSync(updateRoot, { recursive: true })
 
 copyFileSync(binaryPath, join(packageBinDir, binaryName))
 await chmod(join(packageBinDir, binaryName), 0o755)
+writeUpdateFeedFiles()
 
 if (targetPlatform === 'win32') {
   writePowerShellScript(join(packageDir, 'install.ps1'), windowsInstallScript())
@@ -90,6 +94,40 @@ function writePowerShellScript(filePath, contents) {
   writeFileSync(filePath, `\uFEFF${contents}`, 'utf8')
 }
 
+function writeUpdateFeedFiles() {
+  const versionDir = join(updateRoot, version)
+  const platformDir = join(versionDir, target)
+  const updateBinaryPath = join(platformDir, binaryName)
+  mkdirSync(platformDir, { recursive: true })
+  copyFileSync(binaryPath, updateBinaryPath)
+
+  const binary = readFileSync(updateBinaryPath)
+  const platformInfo = {
+    binary: binaryName,
+    checksum: createHash('sha256').update(binary).digest('hex'),
+    size: binary.length,
+  }
+  const manifest = {
+    version,
+    platforms: {
+      [target]: platformInfo,
+    },
+  }
+  writeFileSync(
+    join(versionDir, `manifest.${target}.json`),
+    JSON.stringify(manifest, null, 2) + '\n',
+    'utf8',
+  )
+  writeFileSync(
+    join(versionDir, 'manifest.json'),
+    JSON.stringify(manifest, null, 2) + '\n',
+    'utf8',
+  )
+  writeFileSync(join(updateRoot, 'latest'), `${version}\n`, 'utf8')
+  writeFileSync(join(updateRoot, 'stable'), `${version}\n`, 'utf8')
+  console.log(`Created update feed files in ${updateRoot}`)
+}
+
 function writeUnixSingleFileInstaller(installerPath, tarPath, packageName) {
   const header = `#!/usr/bin/env sh
 set -eu
@@ -132,11 +170,14 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN_DIR="$PREFIX/bin"
+VERSION_DIR="$PREFIX/share/secai/versions"
+VERSION_TARGET="$VERSION_DIR/${version}"
 TARGET="$BIN_DIR/secai"
 
-mkdir -p "$BIN_DIR"
-cp "$SCRIPT_DIR/bin/secai" "$TARGET"
-chmod 755 "$TARGET"
+mkdir -p "$BIN_DIR" "$VERSION_DIR"
+cp "$SCRIPT_DIR/bin/secai" "$VERSION_TARGET"
+chmod 755 "$VERSION_TARGET"
+ln -sfn "$VERSION_TARGET" "$TARGET"
 
 case ":\${PATH:-}:" in
   *":$BIN_DIR:"*) PATH_READY=1 ;;
@@ -180,11 +221,16 @@ if [ "\${1:-}" = "--prefix" ]; then
 fi
 
 TARGET="$PREFIX/bin/secai"
+VERSION_DIR="$PREFIX/share/secai/versions"
 if [ -f "$TARGET" ]; then
   rm "$TARGET"
   printf '已删除 SecAI：%s\\n' "$TARGET"
 else
   printf '未找到 SecAI：%s\\n' "$TARGET"
+fi
+if [ -d "$VERSION_DIR" ]; then
+  rm -rf "$VERSION_DIR"
+  printf '已删除 SecAI 版本目录：%s\\n' "$VERSION_DIR"
 fi
 `
 }
