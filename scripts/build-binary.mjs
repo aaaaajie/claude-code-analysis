@@ -58,10 +58,9 @@ if (process.platform === 'darwin') {
   }
 }
 
-const postject = process.platform === 'win32' ? 'npx.cmd' : 'npx'
+const postject = process.execPath
 const postjectArgs = [
-  '--no-install',
-  'postject',
+  join(root, 'node_modules', 'postject', 'dist', 'cli.js'),
   binaryPath,
   'NODE_SEA_BLOB',
   seaBlobPath,
