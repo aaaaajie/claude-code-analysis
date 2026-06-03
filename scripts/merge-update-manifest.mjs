@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -33,5 +33,8 @@ writeFileSync(
 )
 writeFileSync(join(updateRoot, 'latest'), `${version}\n`, 'utf8')
 writeFileSync(join(updateRoot, 'stable'), `${version}\n`, 'utf8')
+copyFileSync(join(root, 'scripts', 'install.sh'), join(updateRoot, 'install.sh'))
+copyFileSync(join(root, 'scripts', 'install.ps1'), join(updateRoot, 'install.ps1'))
+chmodSync(join(updateRoot, 'install.sh'), 0o755)
 
 console.log(`Merged ${Object.keys(platforms).length} platforms into ${join(versionDir, 'manifest.json')}`)

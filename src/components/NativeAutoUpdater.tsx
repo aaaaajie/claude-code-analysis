@@ -7,10 +7,14 @@ import { useInterval } from 'usehooks-ts';
 import { useUpdateNotification } from '../hooks/useUpdateNotification.js';
 import { Box, Text } from '../ink.js';
 import type { AutoUpdaterResult } from '../utils/autoUpdater.js';
-import { getMaxVersion, getMaxVersionMessage } from '../utils/autoUpdater.js';
+import {
+  getMaxVersion,
+  getMaxVersionMessage,
+  shouldSkipVersion,
+} from '../utils/autoUpdater.js';
 import { isAutoUpdaterDisabled } from '../utils/config.js';
-import { installLatest } from '../utils/nativeInstaller/index.js';
-import { gt } from '../utils/semver.js';
+import { getLatestVersion } from '../utils/nativeInstaller/download.js';
+import { gt, gte } from '../utils/semver.js';
 import { getInitialSettings } from '../utils/settings/settings.js';
 
 /**
@@ -93,33 +97,23 @@ export function NativeAutoUpdater({
         const msg = await getMaxVersionMessage();
         setMaxVersionIssue(msg ?? 'affects your version');
       }
-      const result = await installLatest(channel);
       const currentVersion = MACRO.VERSION;
+      const latestVersion = await getLatestVersion(channel);
       const latencyMs = Date.now() - startTime;
 
-      // Handle lock contention gracefully - just return without treating as error
-      if (result.lockFailed) {
-        logEvent('tengu_native_auto_updater_lock_contention', {
-          latency_ms: latencyMs
-        });
-        return; // Silently skip this update check, will try again later
-      }
-
-      // Update versions for display
       setVersions({
         current: currentVersion,
-        latest: result.latestVersion
+        latest: latestVersion
       });
-      if (result.wasUpdated) {
-        logEvent('tengu_native_auto_updater_success', {
+      if (latestVersion && !gte(currentVersion, latestVersion) && !shouldSkipVersion(latestVersion)) {
+        logEvent('tengu_native_auto_updater_update_available', {
           latency_ms: latencyMs
         });
         onAutoUpdaterResult({
-          version: result.latestVersion,
-          status: 'success'
+          version: latestVersion,
+          status: 'update_available'
         });
       } else {
-        // Already up to date
         logEvent('tengu_native_auto_updater_up_to_date', {
           latency_ms: latencyMs
         });
@@ -176,13 +170,18 @@ export function NativeAutoUpdater({
         </Text>}
       {isUpdating ? <Box>
           <Text dimColor wrap="truncate">
-            Checking for updates
+            正在检查更新
           </Text>
-        </Box> : autoUpdaterResult?.status === 'success' && showSuccessMessage && updateSemver && <Text color="success" wrap="truncate">
-            ✓ Update installed · Restart to update
-          </Text>}
+        </Box> : <>
+          {autoUpdaterResult?.status === 'update_available' && <Text color="warning" wrap="truncate">
+              发现新版本 {autoUpdaterResult.version} · 当前 {MACRO.VERSION} · 运行 <Text bold>secai update</Text> 下载并安装
+            </Text>}
+          {autoUpdaterResult?.status === 'success' && showSuccessMessage && updateSemver && <Text color="success" wrap="truncate">
+              已更新 · 重启后生效
+            </Text>}
+        </>}
       {autoUpdaterResult?.status === 'install_failed' && <Text color="error" wrap="truncate">
-          ✗ Auto-update failed &middot; Try <Text bold>/status</Text>
+          更新检查失败 · 请稍后运行 <Text bold>secai update</Text>
         </Text>}
       {maxVersionIssue && "external" === 'ant' && <Text color="warning">
           ⚠ Known issue: {maxVersionIssue} &middot; Run{' '}

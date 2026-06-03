@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { chmod, rm } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -125,7 +125,16 @@ function writeUpdateFeedFiles() {
   )
   writeFileSync(join(updateRoot, 'latest'), `${version}\n`, 'utf8')
   writeFileSync(join(updateRoot, 'stable'), `${version}\n`, 'utf8')
+  copyUpdateInstallScripts()
   console.log(`Created update feed files in ${updateRoot}`)
+}
+
+function copyUpdateInstallScripts() {
+  const installSh = join(root, 'scripts', 'install.sh')
+  const installPs1 = join(root, 'scripts', 'install.ps1')
+  copyFileSync(installSh, join(updateRoot, 'install.sh'))
+  copyFileSync(installPs1, join(updateRoot, 'install.ps1'))
+  chmodSync(join(updateRoot, 'install.sh'), 0o755)
 }
 
 function writeUnixSingleFileInstaller(installerPath, tarPath, packageName) {

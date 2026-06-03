@@ -27,6 +27,16 @@ SECAI_SKIP_BINARY_SMOKE=1 node scripts/build-release.mjs
 
 ## 安装包
 
+在线安装：
+
+```bash
+curl -fsSL https://ai.rzsec.cn/install.sh | sh
+```
+
+```powershell
+irm https://ai.rzsec.cn/install.ps1 | iex
+```
+
 macOS / Linux 产物包含：
 
 - `secai-<version>-<platform>-<arch>.tar.gz`
@@ -43,6 +53,10 @@ Windows 产物包含：
 ```text
 https://ai.rzsec.cn/downloads/secai-cli/latest
 https://ai.rzsec.cn/downloads/secai-cli/stable
+https://ai.rzsec.cn/install.sh
+https://ai.rzsec.cn/install.ps1
+https://ai.rzsec.cn/downloads/secai-cli/install.sh
+https://ai.rzsec.cn/downloads/secai-cli/install.ps1
 https://ai.rzsec.cn/downloads/secai-cli/<version>/manifest.json
 https://ai.rzsec.cn/downloads/secai-cli/<version>/<platform>/secai
 ```

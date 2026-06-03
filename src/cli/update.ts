@@ -120,46 +120,46 @@ export async function update() {
     writeToStdout('\n')
 
     if (packageManager === 'homebrew') {
-      writeToStdout('Claude is managed by Homebrew.\n')
+      writeToStdout('SecAI 由 Homebrew 管理。\n')
       const latest = await getLatestVersion(channel)
       if (latest && !gte(MACRO.VERSION, latest)) {
-        writeToStdout(`Update available: ${MACRO.VERSION} → ${latest}\n`)
+        writeToStdout(`发现新版本：${MACRO.VERSION} → ${latest}\n`)
         writeToStdout('\n')
-        writeToStdout('To update, run:\n')
-        writeToStdout(chalk.bold('  brew upgrade claude-code') + '\n')
+        writeToStdout('更新命令：\n')
+        writeToStdout(chalk.bold('  brew upgrade secai') + '\n')
       } else {
-        writeToStdout('Claude is up to date!\n')
+        writeToStdout('SecAI 已是最新版本。\n')
       }
     } else if (packageManager === 'winget') {
-      writeToStdout('Claude is managed by winget.\n')
+      writeToStdout('SecAI 由 winget 管理。\n')
       const latest = await getLatestVersion(channel)
       if (latest && !gte(MACRO.VERSION, latest)) {
-        writeToStdout(`Update available: ${MACRO.VERSION} → ${latest}\n`)
+        writeToStdout(`发现新版本：${MACRO.VERSION} → ${latest}\n`)
         writeToStdout('\n')
-        writeToStdout('To update, run:\n')
+        writeToStdout('更新命令：\n')
         writeToStdout(
-          chalk.bold('  winget upgrade Anthropic.ClaudeCode') + '\n',
+          chalk.bold('  winget upgrade SecAI.CLI') + '\n',
         )
       } else {
-        writeToStdout('Claude is up to date!\n')
+        writeToStdout('SecAI 已是最新版本。\n')
       }
     } else if (packageManager === 'apk') {
-      writeToStdout('Claude is managed by apk.\n')
+      writeToStdout('SecAI 由 apk 管理。\n')
       const latest = await getLatestVersion(channel)
       if (latest && !gte(MACRO.VERSION, latest)) {
-        writeToStdout(`Update available: ${MACRO.VERSION} → ${latest}\n`)
+        writeToStdout(`发现新版本：${MACRO.VERSION} → ${latest}\n`)
         writeToStdout('\n')
-        writeToStdout('To update, run:\n')
-        writeToStdout(chalk.bold('  apk upgrade claude-code') + '\n')
+        writeToStdout('更新命令：\n')
+        writeToStdout(chalk.bold('  apk upgrade secai') + '\n')
       } else {
-        writeToStdout('Claude is up to date!\n')
+        writeToStdout('SecAI 已是最新版本。\n')
       }
     } else {
       // pacman, deb, and rpm don't get specific commands because they each have
       // multiple frontends (pacman: yay/paru/makepkg, deb: apt/apt-get/aptitude/nala,
       // rpm: dnf/yum/zypper)
-      writeToStdout('Claude is managed by a package manager.\n')
-      writeToStdout('Please use your package manager to update.\n')
+      writeToStdout('SecAI 由包管理器管理。\n')
+      writeToStdout('请使用对应包管理器更新，或运行 secai update。\n')
     }
 
     await gracefulShutdown(0)
@@ -225,7 +225,7 @@ export async function update() {
           : ''
         writeToStdout(
           chalk.yellow(
-            `Another Claude process${pidInfo} is currently running. Please try again in a moment.`,
+            `另一个 SecAI 进程${pidInfo}正在执行更新，请稍后再试。`,
           ) + '\n',
         )
         await gracefulShutdown(0)
@@ -238,7 +238,7 @@ export async function update() {
 
       if (result.latestVersion === MACRO.VERSION) {
         writeToStdout(
-          chalk.green(`Claude Code is up to date (${MACRO.VERSION})`) + '\n',
+          chalk.green(`SecAI 已是最新版本（${MACRO.VERSION}）`) + '\n',
         )
       } else {
         writeToStdout(
@@ -252,7 +252,7 @@ export async function update() {
     } catch (error) {
       process.stderr.write('Error: Failed to install native update\n')
       process.stderr.write(String(error) + '\n')
-      process.stderr.write('Try running "claude doctor" for diagnostics\n')
+      process.stderr.write('请稍后重试，或运行 "secai doctor" 查看诊断信息\n')
       await gracefulShutdown(1)
     }
   }
@@ -308,7 +308,7 @@ export async function update() {
   // Check if versions match exactly, including any build metadata (like SHA)
   if (latestVersion === MACRO.VERSION) {
     writeToStdout(
-      chalk.green(`Claude Code is up to date (${MACRO.VERSION})`) + '\n',
+      chalk.green(`SecAI 已是最新版本（${MACRO.VERSION}）`) + '\n',
     )
     await gracefulShutdown(0)
   }
