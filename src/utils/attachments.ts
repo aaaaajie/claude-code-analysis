@@ -27,6 +27,9 @@ import { TASK_CREATE_TOOL_NAME } from '../tools/TaskCreateTool/constants.js'
 import { TASK_UPDATE_TOOL_NAME } from '../tools/TaskUpdateTool/constants.js'
 import { BASH_TOOL_NAME } from '../tools/BashTool/toolName.js'
 import { SKILL_TOOL_NAME } from '../tools/SkillTool/constants.js'
+import { FILE_EDIT_TOOL_NAME } from '../tools/FileEditTool/constants.js'
+import { FILE_WRITE_TOOL_NAME } from '../tools/FileWriteTool/prompt.js'
+import { NOTEBOOK_EDIT_TOOL_NAME } from '../tools/NotebookEditTool/constants.js'
 import type { TodoList } from './todo/types.js'
 import {
   type Task,
@@ -250,6 +253,11 @@ import { isInProcessTeammate } from './teammateContext.js'
 import { removeTeammateFromTeamFile } from './swarm/teamHelpers.js'
 import { unassignTeammateTasks } from './tasks.js'
 import { getCompanionIntroAttachment } from '../buddy/prompt.js'
+import {
+  formatSecAIBehaviorGuidanceReminder,
+  SECAI_BEHAVIOR_GUIDANCE_MARKERS,
+  type SecAIBehaviorGuidanceId,
+} from '../constants/secaiBehaviorGuidance.js'
 
 export const TODO_REMINDER_CONFIG = {
   TURNS_SINCE_WRITE: 10,
@@ -915,6 +923,11 @@ export async function getAttachments(
       : []),
     maybe('agent_pending_messages', async () =>
       getAgentPendingMessageAttachments(toolUseContext),
+    ),
+    maybe('secai_behavior_guidance', () =>
+      Promise.resolve(
+        getSecAIBehaviorGuidanceAttachments(input, toolUseContext, messages),
+      ),
     ),
     maybe('critical_system_reminder', () =>
       Promise.resolve(getCriticalSystemReminderAttachment(toolUseContext)),
@@ -1582,6 +1595,154 @@ export function getMcpInstructionsDeltaAttachment(
   const delta = getMcpInstructionsDelta(mcpClients, messages ?? [], clientSide)
   if (!delta) return []
   return [{ type: 'mcp_instructions_delta', ...delta }]
+}
+
+const CODEBASE_TASK_PATTERN =
+  /(改|修改|修|修复|实现|接入|重构|优化|构建|编译|测试|打包|部署|提交|代码|项目|文件|组件|接口|模块|配置|README|package|build|test|fix|implement|refactor|deploy|commit|release|config)/i
+
+const SKILL_AGENT_TASK_PATTERN =
+  /(agent|subagent|智能体|代理|子代理|skill|技能|并行|多智能体|任务分解)/i
+
+const WRITE_TOOL_NAMES = new Set([
+  FILE_EDIT_TOOL_NAME,
+  FILE_WRITE_TOOL_NAME,
+  NOTEBOOK_EDIT_TOOL_NAME,
+])
+
+const SKILL_AGENT_TOOL_NAMES = new Set([SKILL_TOOL_NAME, AGENT_TOOL_NAME])
+
+function getSecAIBehaviorGuidanceAttachments(
+  input: string | null,
+  toolUseContext: ToolUseContext,
+  messages: Message[] | undefined,
+): Attachment[] {
+  const ids: SecAIBehaviorGuidanceId[] = []
+  if (
+    input &&
+    CODEBASE_TASK_PATTERN.test(input) &&
+    !hasSecAIGuidanceMarker(messages, 'codebase')
+  ) {
+    ids.push('codebase')
+  }
+
+  if (
+    shouldAttachSkillAgentGuidance(input, toolUseContext, messages) &&
+    !hasSecAIGuidanceMarker(messages, 'skill_agent')
+  ) {
+    ids.push('skill_agent')
+  }
+
+  if (shouldAttachVerificationGuidance(messages)) {
+    ids.push('verification')
+  }
+
+  if (ids.length === 0) {
+    return []
+  }
+  return [
+    {
+      type: 'critical_system_reminder',
+      content: formatSecAIBehaviorGuidanceReminder(ids),
+    },
+  ]
+}
+
+function shouldAttachSkillAgentGuidance(
+  input: string | null,
+  toolUseContext: ToolUseContext,
+  messages: Message[] | undefined,
+): boolean {
+  if (toolUseContext.agentId) {
+    return true
+  }
+  if (input && SKILL_AGENT_TASK_PATTERN.test(input)) {
+    return true
+  }
+  return latestToolUseIndex(messages, SKILL_AGENT_TOOL_NAMES) !== -1
+}
+
+function shouldAttachVerificationGuidance(
+  messages: Message[] | undefined,
+): boolean {
+  const latestWriteIndex = Math.max(
+    latestEditedFileAttachmentIndex(messages),
+    latestToolUseIndex(messages, WRITE_TOOL_NAMES),
+  )
+  if (latestWriteIndex === -1) {
+    return false
+  }
+  return latestWriteIndex > latestGuidanceMarkerIndex(messages, 'verification')
+}
+
+function hasSecAIGuidanceMarker(
+  messages: Message[] | undefined,
+  id: SecAIBehaviorGuidanceId,
+): boolean {
+  return latestGuidanceMarkerIndex(messages, id) !== -1
+}
+
+function latestGuidanceMarkerIndex(
+  messages: Message[] | undefined,
+  id: SecAIBehaviorGuidanceId,
+): number {
+  if (!messages) {
+    return -1
+  }
+  const marker = SECAI_BEHAVIOR_GUIDANCE_MARKERS[id]
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (
+      message?.type === 'attachment' &&
+      message.attachment.type === 'critical_system_reminder' &&
+      message.attachment.content.includes(marker)
+    ) {
+      return i
+    }
+  }
+  return -1
+}
+
+function latestEditedFileAttachmentIndex(messages: Message[] | undefined) {
+  if (!messages) {
+    return -1
+  }
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (
+      message?.type === 'attachment' &&
+      (message.attachment.type === 'edited_text_file' ||
+        message.attachment.type === 'edited_image_file')
+    ) {
+      return i
+    }
+  }
+  return -1
+}
+
+function latestToolUseIndex(
+  messages: Message[] | undefined,
+  toolNames: ReadonlySet<string>,
+): number {
+  if (!messages) {
+    return -1
+  }
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (
+      message?.type !== 'assistant' ||
+      typeof message.message.content === 'string'
+    ) {
+      continue
+    }
+    if (
+      message.message.content.some(
+        block => block.type === 'tool_use' && toolNames.has(block.name),
+      )
+    ) {
+      return i
+    }
+  }
+  return -1
 }
 
 function getCriticalSystemReminderAttachment(

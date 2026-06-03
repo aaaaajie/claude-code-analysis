@@ -60,6 +60,7 @@ import { logForDebugging } from '../utils/debug.js'
 import { loadMemoryPrompt } from '../memdir/memdir.js'
 import { isUndercover } from '../utils/undercover.js'
 import { isMcpInstructionsDeltaEnabled } from '../utils/mcpInstructionsDelta.js'
+import { getCoreBehaviorSections } from './secaiBehaviorGuidance.js'
 
 // Dead code elimination: conditional imports for feature-gated modules
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -449,7 +450,7 @@ export async function getSystemPrompt(
 ): Promise<string[]> {
   if (isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE)) {
     return [
-      `You are SecAI, an AI coding assistant running in the SecAI CLI.\n\nCWD: ${getCwd()}\nDate: ${getSessionStartDate()}`,
+      `You are SecAI, an AI coding assistant running in the SecAI CLI.\n\n${getCoreBehaviorSections().join('\n\n')}\n\nCWD: ${getCwd()}\nDate: ${getSessionStartDate()}`,
     ]
   }
 
@@ -472,6 +473,7 @@ export async function getSystemPrompt(
       `\nYou are an autonomous agent. Use the available tools to do useful work.
 
 ${CYBER_RISK_INSTRUCTION}`,
+      ...getCoreBehaviorSections(),
       getSystemRemindersSection(),
       await loadMemoryPrompt(),
       envInfo,
@@ -561,6 +563,7 @@ ${CYBER_RISK_INSTRUCTION}`,
     // --- Static content (cacheable) ---
     getSimpleIntroSection(outputStyleConfig),
     getSimpleSystemSection(),
+    ...getCoreBehaviorSections(),
     outputStyleConfig === null ||
     outputStyleConfig.keepCodingInstructions === true
       ? getSimpleDoingTasksSection()

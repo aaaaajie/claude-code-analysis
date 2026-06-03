@@ -5,7 +5,7 @@ import { logForDebugging } from 'src/utils/debug.js';
 import { logError } from 'src/utils/log.js';
 import { useInterval } from 'usehooks-ts';
 import { useUpdateNotification } from '../hooks/useUpdateNotification.js';
-import { Box, Text } from '../ink.js';
+import { Box, Text, useInput } from '../ink.js';
 import type { AutoUpdaterResult } from '../utils/autoUpdater.js';
 import {
   getMaxVersion,
@@ -14,6 +14,7 @@ import {
 } from '../utils/autoUpdater.js';
 import { isAutoUpdaterDisabled } from '../utils/config.js';
 import { getLatestVersion } from '../utils/nativeInstaller/download.js';
+import { installLatest } from '../utils/nativeInstaller/index.js';
 import { gt, gte } from '../utils/semver.js';
 import { getInitialSettings } from '../utils/settings/settings.js';
 
@@ -65,6 +66,7 @@ export function NativeAutoUpdater({
     latest?: string | null;
   }>({});
   const [maxVersionIssue, setMaxVersionIssue] = useState<string | null>(null);
+  const [dismissedVersion, setDismissedVersion] = useState<string | null>(null);
   const updateSemver = useUpdateNotification(autoUpdaterResult?.version);
   const channel = getInitialSettings()?.autoUpdatesChannel ?? 'latest';
 
@@ -106,6 +108,9 @@ export function NativeAutoUpdater({
         latest: latestVersion
       });
       if (latestVersion && !gte(currentVersion, latestVersion) && !shouldSkipVersion(latestVersion)) {
+        if (latestVersion === dismissedVersion) {
+          return;
+        }
         logEvent('tengu_native_auto_updater_update_available', {
           latency_ms: latencyMs
         });
@@ -145,7 +150,50 @@ export function NativeAutoUpdater({
     // identity (which would re-trigger the initial-check useEffect below).
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // biome-ignore lint/correctness/useExhaustiveDependencies: isUpdating read via ref
-  }, [onAutoUpdaterResult, channel]);
+  }, [onAutoUpdaterResult, channel, dismissedVersion]);
+
+  const updateVersion =
+    autoUpdaterResult?.status === 'update_available'
+      ? autoUpdaterResult.version
+      : null;
+
+  const installDetectedUpdate = React.useCallback(async () => {
+    if (!updateVersion || isUpdatingRef.current) {
+      return;
+    }
+
+    onChangeIsUpdating(true);
+    try {
+      const result = await installLatest(updateVersion, false);
+      onAutoUpdaterResult({
+        version: result.latestVersion ?? updateVersion,
+        status: result.wasUpdated ? 'success' : 'install_failed'
+      });
+    } catch (error) {
+      logError(error);
+      onAutoUpdaterResult({
+        version: updateVersion,
+        status: 'install_failed'
+      });
+    } finally {
+      onChangeIsUpdating(false);
+    }
+  }, [onAutoUpdaterResult, onChangeIsUpdating, updateVersion]);
+
+  useInput((input, key) => {
+    if (!updateVersion || isUpdating) {
+      return;
+    }
+    if (input.toLowerCase() === 'u') {
+      void installDetectedUpdate();
+      return;
+    }
+    if (input.toLowerCase() === 'n' || key.escape) {
+      setDismissedVersion(updateVersion);
+    }
+  }, {
+    isActive: !!updateVersion && !isUpdating
+  });
 
   // Initial check
   useEffect(() => {
@@ -154,7 +202,12 @@ export function NativeAutoUpdater({
 
   // Check every 30 minutes
   useInterval(checkForUpdates, 30 * 60 * 1000);
-  const hasUpdateResult = !!autoUpdaterResult?.version;
+  const hasUpdateResult =
+    !!autoUpdaterResult?.version &&
+    !(
+      autoUpdaterResult.status === 'update_available' &&
+      autoUpdaterResult.version === dismissedVersion
+    );
   const hasVersionInfo = !!versions.current && !!versions.latest;
   // Show the component when:
   // - warning banner needed (above max version), or
@@ -170,18 +223,18 @@ export function NativeAutoUpdater({
         </Text>}
       {isUpdating ? <Box>
           <Text dimColor wrap="truncate">
-            正在检查更新
+            {updateVersion ? '正在下载并安装更新' : '正在检查更新'}
           </Text>
         </Box> : <>
           {autoUpdaterResult?.status === 'update_available' && <Text color="warning" wrap="truncate">
-              发现新版本 {autoUpdaterResult.version} · 当前 {MACRO.VERSION} · 运行 <Text bold>secai update</Text> 下载并安装
+              发现新版本 {autoUpdaterResult.version} · 当前 {MACRO.VERSION} · 按 <Text bold>u</Text> 更新，按 <Text bold>Esc</Text> 跳过
             </Text>}
           {autoUpdaterResult?.status === 'success' && showSuccessMessage && updateSemver && <Text color="success" wrap="truncate">
               已更新 · 重启后生效
             </Text>}
         </>}
       {autoUpdaterResult?.status === 'install_failed' && <Text color="error" wrap="truncate">
-          更新检查失败 · 请稍后运行 <Text bold>secai update</Text>
+          更新失败 · 请稍后重试
         </Text>}
       {maxVersionIssue && "external" === 'ant' && <Text color="warning">
           ⚠ Known issue: {maxVersionIssue} &middot; Run{' '}
