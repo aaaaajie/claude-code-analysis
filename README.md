@@ -44,7 +44,8 @@ macOS / Linux 产物包含：
 
 Windows 产物包含：
 
-- `secai-<version>-windows-x64-installer.ps1`
+- `secai-<version>-windows-<arch>.zip`
+- `secai-<version>-windows-<arch>-installer.ps1`
 
 ## 自动更新源
 

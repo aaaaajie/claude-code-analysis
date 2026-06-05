@@ -97,6 +97,7 @@ detect_platform() {
     Linux)
       case "$arch" in
         x86_64|amd64) printf 'linux-x64' ;;
+        arm64|aarch64) printf 'linux-arm64' ;;
         *) unsupported "linux-$arch" ;;
       esac
       ;;
@@ -112,7 +113,7 @@ detect_platform() {
 
 unsupported() {
   printf 'Unsupported platform: %s\n' "$1" >&2
-  printf 'Supported platforms: windows-x64, macos-arm64, macos-x64, linux-x64\n' >&2
+  printf 'Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64\n' >&2
   exit 1
 }
 

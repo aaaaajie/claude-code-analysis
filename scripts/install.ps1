@@ -25,8 +25,11 @@ function Get-SecAIPlatform {
   if ($arch -eq "AMD64" -or $arch -eq "X64") {
     return "windows-x64"
   }
+  if ($arch -eq "ARM64" -or $arch -eq "AARCH64") {
+    return "windows-arm64"
+  }
 
-  throw "Unsupported platform: windows-$($arch.ToLowerInvariant()). Supported platforms: windows-x64, macos-arm64, macos-x64, linux-x64"
+  throw "Unsupported platform: windows-$($arch.ToLowerInvariant()). Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
 }
 
 function Add-UserPath([string]$Dir) {
@@ -41,6 +44,23 @@ function Add-UserPath([string]$Dir) {
     $env:Path = "$Dir;$env:Path"
     Write-Host "Updated user PATH. Reopen PowerShell, or run:"
     Write-Host "  `$env:Path = `"$Dir;`$env:Path`""
+  }
+}
+
+function Save-Url([string]$Uri, [string]$OutFile) {
+  $maxAttempts = 3
+  for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+    try {
+      Remove-Item -Force $OutFile -ErrorAction SilentlyContinue
+      Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+      return
+    } catch {
+      if ($attempt -eq $maxAttempts) {
+        throw "Failed to download $Uri after $maxAttempts attempts: $($_.Exception.Message)"
+      }
+      Write-Host "Download failed, retrying ($attempt/$maxAttempts)..."
+      Start-Sleep -Seconds (2 * $attempt)
+    }
   }
 }
 
@@ -62,15 +82,15 @@ try {
   $manifestPath = Join-Path $tmpDir "manifest.json"
   $binaryPath = Join-Path $tmpDir "secai.exe.download"
 
-  Invoke-WebRequest -Uri "$BaseUrl/$Version/manifest.json" -OutFile $manifestPath
+  Save-Url "$BaseUrl/$Version/manifest.json" $manifestPath
   $manifest = Get-Content -Raw -Path $manifestPath | ConvertFrom-Json
   $platformInfo = $manifest.platforms.$Platform
   if (-not $platformInfo) {
-    throw "Unsupported platform: $Platform. Supported platforms: windows-x64, macos-arm64, macos-x64, linux-x64"
+    throw "Unsupported platform: $Platform. Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
   }
 
   Write-Host "Installing SecAI $Version for $Platform..."
-  Invoke-WebRequest -Uri "$BaseUrl/$Version/$Platform/$($platformInfo.binary)" -OutFile $binaryPath
+  Save-Url "$BaseUrl/$Version/$Platform/$($platformInfo.binary)" $binaryPath
 
   $actualSize = (Get-Item $binaryPath).Length
   if ($actualSize -ne [int64]$platformInfo.size) {
