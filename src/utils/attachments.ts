@@ -1625,6 +1625,10 @@ function getSecAIBehaviorGuidanceAttachments(
     ids.push('codebase')
   }
 
+  if (input && !hasSecAIGuidanceMarker(messages, 'objective_scope')) {
+    ids.push('objective_scope')
+  }
+
   if (
     shouldAttachSkillAgentGuidance(input, toolUseContext, messages) &&
     !hasSecAIGuidanceMarker(messages, 'skill_agent')

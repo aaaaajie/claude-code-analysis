@@ -8,6 +8,7 @@ import type { AgentDefinition } from '../tools/AgentTool/loadAgentsDir.js'
 import { isBuiltInAgent } from '../tools/AgentTool/loadAgentsDir.js'
 import { isEnvTruthy } from './envUtils.js'
 import { asSystemPrompt, type SystemPrompt } from './systemPromptType.js'
+import { getCoreBehaviorSections } from '../constants/secaiBehaviorGuidance.js'
 
 export { asSystemPrompt, type SystemPrompt } from './systemPromptType.js'
 
@@ -23,6 +24,13 @@ const proactiveModule =
 
 function isProactiveActive_SAFE_TO_CALL_ANYWHERE(): boolean {
   return proactiveModule?.isProactiveActive() ?? false
+}
+
+function withCoreBehaviorSections(prompt: string): string[] {
+  if (prompt.includes('# Objective Boundary')) {
+    return [prompt]
+  }
+  return [...getCoreBehaviorSections(), prompt]
 }
 
 /**
@@ -54,7 +62,7 @@ export function buildEffectiveSystemPrompt({
   overrideSystemPrompt?: string | null
 }): SystemPrompt {
   if (overrideSystemPrompt) {
-    return asSystemPrompt([overrideSystemPrompt])
+    return asSystemPrompt(withCoreBehaviorSections(overrideSystemPrompt))
   }
   // Coordinator mode: use coordinator prompt instead of default
   // Use inline env check instead of coordinatorModule to avoid circular
@@ -69,7 +77,7 @@ export function buildEffectiveSystemPrompt({
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require('../coordinator/coordinatorMode.js') as typeof import('../coordinator/coordinatorMode.js')
     return asSystemPrompt([
-      getCoordinatorSystemPrompt(),
+      ...withCoreBehaviorSections(getCoordinatorSystemPrompt()),
       ...(appendSystemPrompt ? [appendSystemPrompt] : []),
     ])
   }
@@ -114,9 +122,9 @@ export function buildEffectiveSystemPrompt({
 
   return asSystemPrompt([
     ...(agentSystemPrompt
-      ? [agentSystemPrompt]
+      ? withCoreBehaviorSections(agentSystemPrompt)
       : customSystemPrompt
-        ? [customSystemPrompt]
+        ? withCoreBehaviorSections(customSystemPrompt)
         : defaultSystemPrompt),
     ...(appendSystemPrompt ? [appendSystemPrompt] : []),
   ])

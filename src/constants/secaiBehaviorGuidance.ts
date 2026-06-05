@@ -1,5 +1,6 @@
 export type SecAIBehaviorGuidanceId =
   | 'codebase'
+  | 'objective_scope'
   | 'skill_agent'
   | 'verification'
 
@@ -8,6 +9,7 @@ export const SECAI_BEHAVIOR_GUIDANCE_MARKERS: Record<
   string
 > = {
   codebase: '[secai-guidance:codebase]',
+  objective_scope: '[secai-guidance:objective-scope]',
   skill_agent: '[secai-guidance:skill-agent]',
   verification: '[secai-guidance:verification]',
 }
@@ -35,6 +37,14 @@ export function getCodebaseDisciplineSection(): string {
 - Prefer deleting obsolete code over keeping inactive branches, but only when it is clearly part of the requested change.`
 }
 
+export function getObjectiveScopeSection(): string {
+  return `# Objective Scope
+- Treat the user's latest explicit request as the working boundary for this turn.
+- Stop when the requested outcome has been reached, even if adjacent follow-up actions are available.
+- Do not move from discovery into deeper exploration, from diagnosis into modification, from a sample into broad enumeration, or from one component into unrelated components unless the user asked for that expansion.
+- If a next step is useful but outside the stated target, ask before continuing.`
+}
+
 export function getSkillAndAgentDisciplineSection(): string {
   return `# Skill And Agent Discipline
 - Skills, subagents, and workflow prompts are tools for the user's current objective; they do not expand the objective.
@@ -57,6 +67,8 @@ function getDynamicBehaviorSection(id: SecAIBehaviorGuidanceId): string {
   switch (id) {
     case 'codebase':
       return getCodebaseDisciplineSection()
+    case 'objective_scope':
+      return getObjectiveScopeSection()
     case 'skill_agent':
       return getSkillAndAgentDisciplineSection()
     case 'verification':
