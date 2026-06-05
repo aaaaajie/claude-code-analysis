@@ -9,14 +9,20 @@ export function isRunningWithBun(): boolean {
   return process.versions.bun !== undefined
 }
 
+function isSecAIBinary(path: string | undefined): boolean {
+  const file = path?.split(/[\\/]/).pop()?.toLowerCase()
+  return file === 'secai' || file === 'secai.exe'
+}
+
 /**
- * Detects if running as a Bun-compiled standalone executable.
- * This checks for embedded files which are present in compiled binaries.
+ * Detects if running as a standalone executable.
  */
 export function isInBundledMode(): boolean {
   return (
-    typeof Bun !== 'undefined' &&
-    Array.isArray(Bun.embeddedFiles) &&
-    Bun.embeddedFiles.length > 0
+    (typeof Bun !== 'undefined' &&
+      Array.isArray(Bun.embeddedFiles) &&
+      Bun.embeddedFiles.length > 0) ||
+    isSecAIBinary(process.execPath) ||
+    isSecAIBinary(process.argv[0])
   )
 }
