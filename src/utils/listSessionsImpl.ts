@@ -92,6 +92,14 @@ export function parseSessionInfoFromLite(
   ) {
     return null
   }
+  if (
+    tail.includes('"type":"session-deleted"') ||
+    tail.includes('"type": "session-deleted"') ||
+    head.includes('"type":"session-deleted"') ||
+    head.includes('"type": "session-deleted"')
+  ) {
+    return null
+  }
   // User title (customTitle) wins over AI title (aiTitle); distinct
   // field names mean extractLastJsonStringField naturally disambiguates.
   const customTitle =

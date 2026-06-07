@@ -1161,6 +1161,8 @@ class Project {
     } else if (entry.type === 'custom-title') {
       // Custom titles can always be appended
       void this.enqueueWrite(sessionFile, entry)
+    } else if (entry.type === 'session-deleted') {
+      void this.enqueueWrite(sessionFile, entry)
     } else if (entry.type === 'ai-title') {
       // AI titles can always be appended
       void this.enqueueWrite(sessionFile, entry)
@@ -2637,6 +2639,16 @@ export async function saveCustomTitle(
   })
 }
 
+export function markSessionDeleted(sessionId: UUID, fullPath?: string): void {
+  const resolvedPath = fullPath ?? getTranscriptPathForSession(sessionId)
+  appendEntryToFile(resolvedPath, {
+    type: 'session-deleted',
+    sessionId,
+    deletedAt: new Date().toISOString(),
+  })
+  logEvent('tengu_session_deleted', {})
+}
+
 /**
  * Persist an AI-generated title to the JSONL as a distinct `ai-title` entry.
  *
@@ -3591,6 +3603,8 @@ export async function loadTranscriptFile(
           summaries.set(entry.leafUuid, entry.summary)
         } else if (entry.type === 'custom-title' && entry.sessionId) {
           customTitles.set(entry.sessionId, entry.customTitle)
+        } else if (entry.type === 'session-deleted') {
+          continue
         } else if (entry.type === 'tag' && entry.sessionId) {
           tags.set(entry.sessionId, entry.tag)
         } else if (entry.type === 'agent-name' && entry.sessionId) {
@@ -3659,6 +3673,8 @@ export async function loadTranscriptFile(
         summaries.set(entry.leafUuid, entry.summary)
       } else if (entry.type === 'custom-title' && entry.sessionId) {
         customTitles.set(entry.sessionId, entry.customTitle)
+      } else if (entry.type === 'session-deleted') {
+        continue
       } else if (entry.type === 'tag' && entry.sessionId) {
         tags.set(entry.sessionId, entry.tag)
       } else if (entry.type === 'agent-name' && entry.sessionId) {
@@ -4580,6 +4596,7 @@ type LiteMetadata = {
   firstPrompt: string
   gitBranch?: string
   isSidechain: boolean
+  isDeleted?: boolean
   projectPath?: string
   teamName?: string
   customTitle?: string
@@ -4743,6 +4760,11 @@ async function readLiteMetadata(
 ): Promise<LiteMetadata> {
   const { head, tail } = await readHeadAndTail(filePath, fileSize, buf)
   if (!head) return { firstPrompt: '', isSidechain: false }
+  const isDeleted =
+    tail.includes('"type":"session-deleted"') ||
+    tail.includes('"type": "session-deleted"') ||
+    head.includes('"type":"session-deleted"') ||
+    head.includes('"type": "session-deleted"')
 
   // Extract stable metadata from the first line via string search.
   // Works even when the first line is truncated (>64KB message).
@@ -4800,6 +4822,7 @@ async function readLiteMetadata(
     firstPrompt,
     gitBranch,
     isSidechain,
+    isDeleted,
     projectPath,
     teamName,
     customTitle,
@@ -5027,6 +5050,10 @@ async function enrichLog(
   if (!log.isLite || !log.fullPath) return log
 
   const meta = await readLiteMetadata(log.fullPath, log.fileSize ?? 0, readBuf)
+  if (meta.isDeleted) {
+    logForDebugging(`Session ${log.sessionId} filtered from /resume: deleted`)
+    return null
+  }
 
   const enriched: LogOption = {
     ...log,

@@ -64,6 +64,12 @@ export type CustomTitleMessage = {
   customTitle: string
 }
 
+export type SessionDeletedMessage = {
+  type: 'session-deleted'
+  sessionId: UUID
+  deletedAt: string
+}
+
 /**
  * AI-generated session title. Distinct from CustomTitleMessage so that:
  * - User renames (custom-title) always win over AI titles in read preference
@@ -298,6 +304,7 @@ export type Entry =
   | TranscriptMessage
   | SummaryMessage
   | CustomTitleMessage
+  | SessionDeletedMessage
   | AiTitleMessage
   | LastPromptMessage
   | TaskSummaryMessage
