@@ -4,7 +4,6 @@ import { Box, Text, type TextProps } from '../../ink.js';
 import { feature } from 'bun:bundle';
 import * as React from 'react';
 import { useState } from 'react';
-import sample from 'lodash-es/sample.js';
 import { BLACK_CIRCLE, REFERENCE_MARK, TEARDROP_ASTERISK } from '../../constants/figures.js';
 import figures from 'figures';
 import { basename } from 'path';
@@ -14,7 +13,6 @@ import { openPath } from '../../utils/browser.js';
 /* eslint-disable @typescript-eslint/no-require-imports */
 const teamMemSaved = feature('TEAMMEM') ? require('./teamMemSaved.js') as typeof import('./teamMemSaved.js') : null;
 /* eslint-enable @typescript-eslint/no-require-imports */
-import { TURN_COMPLETION_VERBS } from '../../constants/turnCompletionVerbs.js';
 import { useTerminalSize } from '../../hooks/useTerminalSize.js';
 import type { SystemMessage, SystemStopHookSummaryMessage, SystemBridgeStatusMessage, SystemTurnDurationMessage, SystemThinkingMessage, SystemMemorySavedMessage } from '../../types/message.js';
 import { SystemAPIErrorMessage } from './SystemAPIErrorMessage.js';
@@ -498,7 +496,6 @@ function TurnDurationMessage(t0) {
     addMargin
   } = t0;
   const bg = useSelectedMessageBg();
-  const [verb] = useState(_temp4);
   const store = useAppStateStore();
   let t1;
   if ($[0] !== store) {
@@ -541,7 +538,7 @@ function TurnDurationMessage(t0) {
     const limit = message.budgetLimit;
     let t5;
     if ($[5] !== limit || $[6] !== tokens) {
-      t5 = tokens >= limit ? `${formatNumber(tokens)} used (${formatNumber(limit)} min ${figures.tick})` : `${formatNumber(tokens)} / ${formatNumber(limit)} (${Math.round(tokens / limit * 100)}%)`;
+      t5 = tokens >= limit ? `已用 ${formatNumber(tokens)}（目标至少 ${formatNumber(limit)} ${figures.tick}）` : `${formatNumber(tokens)} / ${formatNumber(limit)}（${Math.round(tokens / limit * 100)}%）`;
       $[5] = limit;
       $[6] = tokens;
       $[7] = t5;
@@ -549,7 +546,7 @@ function TurnDurationMessage(t0) {
       t5 = $[7];
     }
     const usage = t5;
-    const nudges = message.budgetNudges > 0 ? ` \u00B7 ${message.budgetNudges} ${message.budgetNudges === 1 ? "nudge" : "nudges"}` : "";
+    const nudges = message.budgetNudges > 0 ? ` \u00B7 续写 ${message.budgetNudges} 次` : "";
     t4 = `${showTurnDuration ? " \xB7 " : ""}${usage}${nudges}`;
   }
   const budgetSuffix = t4;
@@ -564,8 +561,8 @@ function TurnDurationMessage(t0) {
   } else {
     t6 = $[8];
   }
-  const t7 = showTurnDuration && `${verb} for ${duration}`;
-  const t8 = backgroundTaskSummary && ` \u00B7 ${backgroundTaskSummary} still running`;
+  const t7 = showTurnDuration && `本轮耗时 ${duration}`;
+  const t8 = backgroundTaskSummary && ` \u00B7 ${backgroundTaskSummary} 仍在运行`;
   let t9;
   if ($[9] !== budgetSuffix || $[10] !== t7 || $[11] !== t8) {
     t9 = <Text dimColor={true}>{t7}{budgetSuffix}{t8}</Text>;
@@ -587,9 +584,6 @@ function TurnDurationMessage(t0) {
     t10 = $[16];
   }
   return t10;
-}
-function _temp4() {
-  return sample(TURN_COMPLETION_VERBS) ?? "Worked";
 }
 function MemorySavedMessage(t0) {
   const $ = _c(16);

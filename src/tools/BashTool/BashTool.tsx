@@ -225,21 +225,21 @@ const isBackgroundTasksDisabled =
 // eslint-disable-next-line custom-rules/no-process-env-top-level -- Intentional: schema must be defined at module load
 isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_BACKGROUND_TASKS);
 const fullInputSchema = lazySchema(() => z.strictObject({
-  command: z.string().describe('The command to execute'),
-  timeout: semanticNumber(z.number().optional()).describe(`Optional timeout in milliseconds (max ${getMaxTimeoutMs()})`),
-  description: z.string().optional().describe(`Clear, concise description of what this command does in active voice. Never use words like "complex" or "risk" in the description - just describe what it does.
+  command: z.string().describe('要执行的 shell 命令'),
+  timeout: semanticNumber(z.number().optional()).describe(`可选超时时间，单位毫秒（最大 ${getMaxTimeoutMs()}）`),
+  description: z.string().optional().describe(`用简短中文说明这个命令要做什么。不要使用“复杂”“风险”等评价词，只描述动作本身。
 
-For simple commands (git, npm, standard CLI tools), keep it brief (5-10 words):
-- ls → "List files in current directory"
-- git status → "Show working tree status"
-- npm install → "Install package dependencies"
+简单命令保持简短：
+- ls → "列出当前目录文件"
+- git status → "查看工作区状态"
+- npm install → "安装项目依赖"
 
-For commands that are harder to parse at a glance (piped commands, obscure flags, etc.), add enough context to clarify what it does:
-- find . -name "*.tmp" -exec rm {} \\; → "Find and delete all .tmp files recursively"
-- git reset --hard origin/main → "Discard all local changes and match remote main"
-- curl -s url | jq '.data[]' → "Fetch JSON from URL and extract data array elements"`),
-  run_in_background: semanticBoolean(z.boolean().optional()).describe(`Set to true to run this command in the background. Use Read to read the output later.`),
-  dangerouslyDisableSandbox: semanticBoolean(z.boolean().optional()).describe('Set this to true to dangerously override sandbox mode and run commands without sandboxing.'),
+较难一眼看懂的命令（管道、复杂参数等）补足上下文：
+- find . -name "*.tmp" -exec rm {} \\; → "递归删除 .tmp 文件"
+- git reset --hard origin/main → "丢弃本地改动并对齐远端 main"
+- curl -s url | jq '.data[]' → "获取 JSON 并提取 data 数组"`),
+  run_in_background: semanticBoolean(z.boolean().optional()).describe(`设为 true 时在后台运行命令。之后可用 Read 读取输出。`),
+  dangerouslyDisableSandbox: semanticBoolean(z.boolean().optional()).describe('设为 true 时跳过沙箱限制并直接执行命令。'),
   _simulatedSedEdit: z.object({
     filePath: z.string(),
     newContent: z.string()
@@ -499,7 +499,7 @@ export const BashTool = buildTool({
     // `new RegExp` per call. userFacingName runs per-render for every bash
     // message in history; with ~50 msgs + one slow-to-tokenize command, this
     // exceeds the shimmer tick → transition abort → infinite retry (#21605).
-    return isEnvTruthy(process.env.CLAUDE_CODE_BASH_SANDBOX_SHOW_INDICATOR) && shouldUseSandbox(input) ? 'SandboxedBash' : 'Bash';
+    return isEnvTruthy(process.env.CLAUDE_CODE_BASH_SANDBOX_SHOW_INDICATOR) && shouldUseSandbox(input) ? '沙箱命令' : '命令';
   },
   getToolUseSummary(input) {
     if (!input?.command) {
@@ -516,10 +516,10 @@ export const BashTool = buildTool({
   },
   getActivityDescription(input) {
     if (!input?.command) {
-      return 'Running command';
+      return '执行命令';
     }
     const desc = input.description ?? truncate(input.command, TOOL_SUMMARY_MAX_LENGTH);
-    return `Running ${desc}`;
+    return `执行 ${desc}`;
   },
   async validateInput(input: BashToolInput): Promise<ValidationResult> {
     if (feature('MONITOR_TOOL') && !isBackgroundTasksDisabled && !input.run_in_background) {

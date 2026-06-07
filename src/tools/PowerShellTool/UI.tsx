@@ -64,7 +64,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
   const lastProgress = progressMessagesForMessage.at(-1);
   if (!lastProgress || !lastProgress.data) {
     return <MessageResponse height={1}>
-        <Text dimColor>Running…</Text>
+        <Text dimColor>运行中…</Text>
       </MessageResponse>;
   }
   const data = lastProgress.data;
@@ -72,7 +72,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
 }
 export function renderToolUseQueuedMessage(): React.ReactNode {
   return <MessageResponse height={1}>
-      <Text dimColor>Waiting…</Text>
+      <Text dimColor>等待中…</Text>
     </MessageResponse>;
 }
 export function renderToolResultMessage(content: Out, progressMessagesForMessage: ProgressMessage<PowerShellProgress>[], {
@@ -107,9 +107,9 @@ export function renderToolResultMessage(content: Out, progressMessagesForMessage
       {stdout === '' && stderr.trim() === '' ? <MessageResponse height={1}>
           <Text dimColor>
             {backgroundTaskId ? <>
-                Running in the background{' '}
-                <KeyboardShortcutHint shortcut="↓" action="manage" parens />
-              </> : interrupted ? 'Interrupted' : returnCodeInterpretation || '(No output)'}
+                后台运行中{' '}
+                <KeyboardShortcutHint shortcut="↓" action="管理" parens />
+              </> : interrupted ? '已中断' : returnCodeInterpretation || '(无输出)'}
           </Text>
         </MessageResponse> : null}
       {timeoutMs ? <MessageResponse>

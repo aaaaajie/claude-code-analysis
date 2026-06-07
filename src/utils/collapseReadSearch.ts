@@ -23,6 +23,7 @@ import type {
 } from '../types/message.js'
 import { getDisplayPath } from './file.js'
 import { isFullscreenEnvEnabled } from './fullscreen.js'
+import { localizeActivityText } from './localizeActivityText.js'
 import {
   isAutoManagedMemoryFile,
   isAutoManagedMemoryPattern,
@@ -956,7 +957,7 @@ export function collapseReadSearchGroups(
  * @param isActive Whether the group is still in progress (use present tense) or completed (use past tense)
  * @param replCount Number of REPL executions (optional)
  * @param memoryCounts Optional memory file operation counts
- * @returns Summary text like "Searching for 3 patterns, reading 2 files, REPL'd 5 times…"
+ * @returns Summary text like "正在搜索 3 个模式，读取 2 个文件，执行 REPL 5 次…"
  */
 export function getSearchReadSummaryText(
   searchCount: number,
@@ -980,37 +981,19 @@ export function getSearchReadSummaryText(
     const { memorySearchCount, memoryReadCount, memoryWriteCount } =
       memoryCounts
     if (memoryReadCount > 0) {
-      const verb = isActive
-        ? parts.length === 0
-          ? 'Recalling'
-          : 'recalling'
-        : parts.length === 0
-          ? 'Recalled'
-          : 'recalled'
+      const verb = isActive ? '正在回忆' : '已回忆'
       parts.push(
-        `${verb} ${memoryReadCount} ${memoryReadCount === 1 ? 'memory' : 'memories'}`,
+        `${verb} ${memoryReadCount} 条记忆`,
       )
     }
     if (memorySearchCount > 0) {
-      const verb = isActive
-        ? parts.length === 0
-          ? 'Searching'
-          : 'searching'
-        : parts.length === 0
-          ? 'Searched'
-          : 'searched'
-      parts.push(`${verb} memories`)
+      const verb = isActive ? '正在搜索' : '已搜索'
+      parts.push(`${verb}记忆`)
     }
     if (memoryWriteCount > 0) {
-      const verb = isActive
-        ? parts.length === 0
-          ? 'Writing'
-          : 'writing'
-        : parts.length === 0
-          ? 'Wrote'
-          : 'wrote'
+      const verb = isActive ? '正在写入' : '已写入'
       parts.push(
-        `${verb} ${memoryWriteCount} ${memoryWriteCount === 1 ? 'memory' : 'memories'}`,
+        `${verb} ${memoryWriteCount} 条记忆`,
       )
     }
     // Team memory operations
@@ -1020,45 +1003,27 @@ export function getSearchReadSummaryText(
   }
 
   if (searchCount > 0) {
-    const searchVerb = isActive
-      ? parts.length === 0
-        ? 'Searching for'
-        : 'searching for'
-      : parts.length === 0
-        ? 'Searched for'
-        : 'searched for'
+    const searchVerb = isActive ? '正在搜索' : '已搜索'
     parts.push(
-      `${searchVerb} ${searchCount} ${searchCount === 1 ? 'pattern' : 'patterns'}`,
+      `${searchVerb} ${searchCount} 个模式`,
     )
   }
 
   if (readCount > 0) {
-    const readVerb = isActive
-      ? parts.length === 0
-        ? 'Reading'
-        : 'reading'
-      : parts.length === 0
-        ? 'Read'
-        : 'read'
-    parts.push(`${readVerb} ${readCount} ${readCount === 1 ? 'file' : 'files'}`)
+    const readVerb = isActive ? '正在读取' : '已读取'
+    parts.push(`${readVerb} ${readCount} 个文件`)
   }
 
   if (listCount > 0) {
-    const listVerb = isActive
-      ? parts.length === 0
-        ? 'Listing'
-        : 'listing'
-      : parts.length === 0
-        ? 'Listed'
-        : 'listed'
+    const listVerb = isActive ? '正在列出' : '已列出'
     parts.push(
-      `${listVerb} ${listCount} ${listCount === 1 ? 'directory' : 'directories'}`,
+      `${listVerb} ${listCount} 个目录`,
     )
   }
 
   if (replCount > 0) {
-    const replVerb = isActive ? "REPL'ing" : "REPL'd"
-    parts.push(`${replVerb} ${replCount} ${replCount === 1 ? 'time' : 'times'}`)
+    const replVerb = isActive ? '正在执行 REPL' : '已执行 REPL'
+    parts.push(`${replVerb} ${replCount} 次`)
   }
 
   const text = parts.join(', ')
@@ -1102,7 +1067,7 @@ export function summarizeRecentActivities(
   // SendMessage don't implement getActivityDescription, so search backward)
   for (let i = activities.length - 1; i >= 0; i--) {
     if (activities[i]?.activityDescription) {
-      return activities[i]!.activityDescription
+      return localizeActivityText(activities[i]!.activityDescription!)
     }
   }
   return undefined

@@ -82,6 +82,8 @@ export function KeyboardShortcutHint(t0) {
 
 function getShortcutActionLabel(action: string): string {
   switch (action) {
+    case 'expand':
+      return '展开'
     case 'cancel':
       return '取消'
     case 'details':

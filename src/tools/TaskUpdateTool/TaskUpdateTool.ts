@@ -42,7 +42,7 @@ const inputSchema = lazySchema(() => {
       .string()
       .optional()
       .describe(
-        'Present continuous form shown in spinner when in_progress (e.g., "Running tests")',
+        '执行中显示在状态栏的中文短语，例如“运行测试中”“扫描项目中”。必须使用中文，不要使用英文现在进行时。',
       ),
     status: TaskUpdateStatusSchema.optional().describe(
       'New status for the task',

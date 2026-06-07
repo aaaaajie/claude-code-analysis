@@ -148,9 +148,9 @@ The assistant did not use the todo list because this is a single command executi
    - in_progress: Currently working on (limit to ONE task at a time)
    - completed: Task finished successfully
 
-   **IMPORTANT**: Task descriptions must have two forms:
-   - content: The imperative form describing what needs to be done (e.g., "Run tests", "Build the project")
-   - activeForm: The present continuous form shown during execution (e.g., "Running tests", "Building the project")
+   **IMPORTANT**: Task descriptions must have two forms and both must be written in Chinese:
+   - content: 描述要做什么的中文短句，例如“运行测试”“构建项目”
+   - activeForm: 执行中显示在状态栏的中文短语，例如“运行测试中”“构建项目中”。不要使用英文现在进行时。
 
 2. **Task Management**:
    - Update task status in real-time as you work
@@ -172,13 +172,13 @@ The assistant did not use the todo list because this is a single command executi
 4. **Task Breakdown**:
    - Create specific, actionable items
    - Break complex tasks into smaller, manageable steps
-   - Use clear, descriptive task names
+   - Use clear, descriptive Chinese task names
    - Always provide both forms:
-     - content: "Fix authentication bug"
-     - activeForm: "Fixing authentication bug"
+     - content: "修复认证问题"
+     - activeForm: "修复认证问题中"
 
 When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 `
 
 export const DESCRIPTION =
-  'Update the todo list for the current session. To be used proactively and often to track progress and pending tasks. Make sure that at least one task is in_progress at all times. Always provide both content (imperative) and activeForm (present continuous) for each task.'
+  '更新当前会话的待办列表，用于跟踪进度和待处理任务。每个任务都必须提供中文 content 和中文 activeForm。'

@@ -1,4 +1,4 @@
-export const DESCRIPTION = 'Update a task in the task list'
+export const DESCRIPTION = '更新任务列表中的任务'
 
 export const PROMPT = `Use this tool to update a task in the task list.
 
@@ -30,9 +30,9 @@ export const PROMPT = `Use this tool to update a task in the task list.
 ## Fields You Can Update
 
 - **status**: The task status (see Status Workflow below)
-- **subject**: Change the task title (imperative form, e.g., "Run tests")
-- **description**: Change the task description
-- **activeForm**: Present continuous form shown in spinner when in_progress (e.g., "Running tests")
+- **subject**: 修改任务标题。使用简短中文，例如“运行测试”
+- **description**: 修改任务描述。使用中文
+- **activeForm**: 任务进行中显示在状态栏的中文短语，例如“运行测试中”“扫描项目中”。必须使用中文，不要使用英文现在进行时
 - **owner**: Change the task owner (agent name)
 - **metadata**: Merge metadata keys into the task (set a key to null to delete it)
 - **addBlocks**: Mark tasks that cannot start until this one completes

@@ -20,7 +20,7 @@ import { type BashTaskKind, isLocalShellTask, type LocalShellTaskState } from '.
 import { killTask } from './killShellTasks.js';
 
 /** Prefix that identifies a LocalShellTask summary to the UI collapse transform. */
-export const BACKGROUND_BASH_SUMMARY_PREFIX = 'Background command ';
+export const BACKGROUND_BASH_SUMMARY_PREFIX = '后台命令';
 const STALL_CHECK_INTERVAL_MS = 5_000;
 const STALL_THRESHOLD_MS = 45_000;
 const STALL_TAIL_BYTES = 1024;
@@ -72,7 +72,7 @@ function startStallWatchdog(taskId: string, description: string, kind: BashTaskK
         cancelled = true;
         clearInterval(timer);
         const toolUseIdLine = toolUseId ? `\n<${TOOL_USE_ID_TAG}>${toolUseId}</${TOOL_USE_ID_TAG}>` : '';
-        const summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}"${description}" appears to be waiting for interactive input`;
+        const summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}“${description}”似乎正在等待交互输入`;
         // No <status> tag — print.ts treats <status> as a terminal
         // signal and an unknown value falls through to 'completed',
         // falsely closing the task for SDK consumers. Statusless
@@ -85,7 +85,7 @@ function startStallWatchdog(taskId: string, description: string, kind: BashTaskK
 Last output:
 ${content.trimEnd()}
 
-The command is likely blocked on an interactive prompt. Kill this task and re-run with piped input (e.g., \`echo y | command\`) or a non-interactive flag if one exists.`;
+该命令可能卡在交互式提示上。请停止此任务，并使用管道输入（例如 \`echo y | command\`）或非交互参数重新运行。`;
         enqueuePendingNotification({
           value: message,
           mode: 'task-notification',
@@ -145,13 +145,13 @@ function enqueueShellNotification(taskId: string, description: string, status: '
   } else {
     switch (status) {
       case 'completed':
-        summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}"${description}" completed${exitCode !== undefined ? ` (exit code ${exitCode})` : ''}`;
+        summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}“${description}”已完成${exitCode !== undefined ? `（退出码 ${exitCode}）` : ''}`;
         break;
       case 'failed':
-        summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}"${description}" failed${exitCode !== undefined ? ` with exit code ${exitCode}` : ''}`;
+        summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}“${description}”执行失败${exitCode !== undefined ? `（退出码 ${exitCode}）` : ''}`;
         break;
       case 'killed':
-        summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}"${description}" was stopped`;
+        summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}“${description}”已停止`;
         break;
     }
   }

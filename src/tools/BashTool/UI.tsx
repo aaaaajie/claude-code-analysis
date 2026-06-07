@@ -74,7 +74,7 @@ export function BackgroundHint(t0) {
   }
   let t4;
   if ($[7] !== shortcut) {
-    t4 = <Box paddingLeft={5}><Text dimColor={true}><KeyboardShortcutHint shortcut={shortcut} action="run in background" parens={true} /></Text></Box>;
+    t4 = <Box paddingLeft={5}><Text dimColor={true}><KeyboardShortcutHint shortcut={shortcut} action="后台运行" parens={true} /></Text></Box>;
     $[7] = shortcut;
     $[8] = t4;
   } else {
@@ -90,7 +90,8 @@ export function renderToolUseMessage(input: Partial<BashToolInput>, {
   theme: ThemeName;
 }): React.ReactNode {
   const {
-    command
+    command,
+    description
   } = input;
   if (!command) {
     return null;
@@ -102,17 +103,19 @@ export function renderToolUseMessage(input: Partial<BashToolInput>, {
     return verbose ? sedInfo.filePath : getDisplayPath(sedInfo.filePath);
   }
   if (!verbose) {
-    const lines = command.split('\n');
+    const descriptionText = description?.trim();
+    const displayCommand = descriptionText || command;
+    const lines = displayCommand.split('\n');
     if (isFullscreenEnvEnabled()) {
-      const label = extractBashCommentLabel(command);
+      const label = descriptionText || extractBashCommentLabel(command);
       if (label) {
         return label.length > MAX_COMMAND_DISPLAY_CHARS ? label.slice(0, MAX_COMMAND_DISPLAY_CHARS) + '…' : label;
       }
     }
     const needsLineTruncation = lines.length > MAX_COMMAND_DISPLAY_LINES;
-    const needsCharTruncation = command.length > MAX_COMMAND_DISPLAY_CHARS;
+    const needsCharTruncation = displayCommand.length > MAX_COMMAND_DISPLAY_CHARS;
     if (needsLineTruncation || needsCharTruncation) {
-      let truncated = command;
+      let truncated = displayCommand;
 
       // First truncate by lines if needed
       if (needsLineTruncation) {
@@ -125,6 +128,7 @@ export function renderToolUseMessage(input: Partial<BashToolInput>, {
       }
       return <Text>{truncated.trim()}…</Text>;
     }
+    return displayCommand;
   }
   return command;
 }
@@ -145,7 +149,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
   const lastProgress = progressMessagesForMessage.at(-1);
   if (!lastProgress || !lastProgress.data) {
     return <MessageResponse height={1}>
-        <Text dimColor>Running…</Text>
+        <Text dimColor>运行中…</Text>
       </MessageResponse>;
   }
   const data = lastProgress.data;
@@ -153,7 +157,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
 }
 export function renderToolUseQueuedMessage(): React.ReactNode {
   return <MessageResponse height={1}>
-      <Text dimColor>Waiting…</Text>
+      <Text dimColor>等待中…</Text>
     </MessageResponse>;
 }
 export function renderToolResultMessage(content: Out, progressMessagesForMessage: ProgressMessage<BashProgress>[], {

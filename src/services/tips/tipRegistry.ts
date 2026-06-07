@@ -96,7 +96,7 @@ const externalTips: Tip[] = [
   {
     id: 'plan-mode-for-complex-tasks',
     content: async () =>
-      `Use Plan Mode to prepare for a complex request before making changes. Press ${getShortcutDisplay('chat:cycleMode', 'Chat', 'shift+tab')} twice to enable.`,
+      `复杂请求建议先用计划模式梳理方案。按 ${getShortcutDisplay('chat:cycleMode', 'Chat', 'shift+tab')} 两次启用。`,
     cooldownSessions: 5,
     isRelevant: async () => {
       if (process.env.USER_TYPE === 'ant') return false
@@ -111,7 +111,7 @@ const externalTips: Tip[] = [
   {
     id: 'default-permission-mode-config',
     content: async () =>
-      `Use /config to change your default permission mode (including Plan Mode)`,
+      `可用 /config 修改默认权限模式（包括计划模式）`,
     cooldownSessions: 10,
     isRelevant: async () => {
       try {
@@ -175,8 +175,8 @@ const externalTips: Tip[] = [
     id: 'shift-enter',
     content: async () =>
       env.terminal === 'Apple_Terminal'
-        ? 'Press Option+Enter to send a multi-line message'
-        : 'Press Shift+Enter to send a multi-line message',
+        ? '按 Option+Enter 发送多行消息'
+        : '按 Shift+Enter 发送多行消息',
     cooldownSessions: 10,
     async isRelevant() {
       const config = getGlobalConfig()
@@ -191,8 +191,8 @@ const externalTips: Tip[] = [
     id: 'shift-enter-setup',
     content: async () =>
       env.terminal === 'Apple_Terminal'
-        ? 'Run /terminal-setup to enable Option+Enter for new lines'
-        : 'Run /terminal-setup to enable Shift+Enter for new lines',
+        ? '运行 /terminal-setup 启用 Option+Enter 换行'
+        : '运行 /terminal-setup 启用 Shift+Enter 换行',
     cooldownSessions: 10,
     async isRelevant() {
       if (!shouldOfferTerminalSetup()) {
@@ -456,14 +456,14 @@ const externalTips: Tip[] = [
   {
     id: 'mobile-app',
     content: async () =>
-      '/mobile to use Claude Code from the Claude app on your phone',
+      '/mobile 可在移动端继续使用 SecAI',
     cooldownSessions: 15,
     isRelevant: async () => true,
   },
   {
     id: 'opusplan-mode-reminder',
     content: async () =>
-      `Your default model setting is Opus Plan Mode. Press ${getShortcutDisplay('chat:cycleMode', 'Chat', 'shift+tab')} twice to activate Plan Mode and plan with Claude Opus.`,
+      `当前默认模型设置为计划模式。按 ${getShortcutDisplay('chat:cycleMode', 'Chat', 'shift+tab')} 两次启用计划模式。`,
     cooldownSessions: 2,
     async isRelevant() {
       if (process.env.USER_TYPE === 'ant') return false

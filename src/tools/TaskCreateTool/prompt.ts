@@ -1,6 +1,6 @@
 import { isAgentSwarmsEnabled } from '../../utils/agentSwarmsEnabled.js'
 
-export const DESCRIPTION = 'Create a new task in the task list'
+export const DESCRIPTION = '创建任务列表中的新任务'
 
 export function getPrompt(): string {
   const teammateContext = isAgentSwarmsEnabled()
@@ -13,8 +13,7 @@ export function getPrompt(): string {
 `
     : ''
 
-  return `Use this tool to create a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
-It also helps the user understand the progress of the task and overall progress of their requests.
+  return `使用此工具为当前会话创建结构化任务列表，用来跟踪进度、组织复杂任务，并让用户清楚看到当前工作进展。
 
 ## When to Use This Tool
 
@@ -41,15 +40,15 @@ NOTE that you should not use this tool if there is only one trivial task to do. 
 
 ## Task Fields
 
-- **subject**: A brief, actionable title in imperative form (e.g., "Fix authentication bug in login flow")
-- **description**: What needs to be done
-- **activeForm** (optional): Present continuous form shown in the spinner when the task is in_progress (e.g., "Fixing authentication bug"). If omitted, the spinner shows the subject instead.
+- **subject**: 简短、可执行的中文任务标题，例如“修复登录流程认证问题”
+- **description**: 需要完成的具体内容，使用中文
+- **activeForm** (optional): 任务进行中显示在状态栏的中文短语，例如“修复登录问题中”“扫描项目中”。必须使用中文，不要写成 "Running tests"、"Scanning files" 这类英文现在进行时。如果省略，状态栏会显示 subject。
 
 All tasks are created with status \`pending\`.
 
 ## Tips
 
-- Create tasks with clear, specific subjects that describe the outcome
+- Create tasks with clear, specific Chinese subjects that describe the outcome
 - After creating tasks, use TaskUpdate to set up dependencies (blocks/blockedBy) if needed
 ${teammateTips}- Check TaskList first to avoid creating duplicate tasks
 `

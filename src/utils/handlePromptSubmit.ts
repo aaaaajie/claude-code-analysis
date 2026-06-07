@@ -31,6 +31,7 @@ import { processUserInput } from './processUserInput/processUserInput.js'
 import type { QueryGuard } from './QueryGuard.js'
 import { queryCheckpoint, startQueryProfile } from './queryProfiler.js'
 import { appendSecAILog, isSecAIActive } from '../services/secai/client.js'
+import { isCompletedBackgroundBashNotificationText } from './collapseBackgroundBashNotifications.js'
 import { runWithWorkload } from './workloadContext.js'
 
 function exit(): void {
@@ -588,9 +589,13 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
             if (m.type === 'user') m.origin = origin
           }
         }
+        const isDisplayOnlyNotification =
+          cmd.mode === 'task-notification' &&
+          typeof cmd.value === 'string' &&
+          isCompletedBackgroundBashNotificationText(cmd.value)
         newMessages.push(...result.messages)
         if (isFirst) {
-          shouldQuery = result.shouldQuery
+          shouldQuery = isDisplayOnlyNotification ? false : result.shouldQuery
           allowedTools = result.allowedTools
           model = result.model
           effort = result.effort

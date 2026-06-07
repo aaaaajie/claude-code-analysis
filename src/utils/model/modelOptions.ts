@@ -286,8 +286,8 @@ const MaxHaiku45Option: ModelOption = {
 function getOpusPlanOption(): ModelOption {
   return {
     value: 'opusplan',
-    label: 'Opus Plan Mode',
-    description: 'Use Opus 4.6 in plan mode, Sonnet 4.6 otherwise',
+    label: 'Opus 计划模式',
+    description: '计划模式使用 Opus 4.6，其他场景使用 Sonnet 4.6',
   }
 }
 

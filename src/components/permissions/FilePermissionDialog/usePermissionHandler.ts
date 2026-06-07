@@ -138,6 +138,31 @@ function handleAcceptSession(
   toolUseConfirm.onAllow(toolUseConfirm.input, suggestions)
 }
 
+function handleAcceptBypass(params: PermissionHandlerParams): void {
+  const { messageId, toolUseConfirm, onDone, completionType, languageName } =
+    params
+
+  logPermissionEvent('accept', completionType, languageName, messageId)
+  logEvent('tengu_accept_submitted', {
+    toolName: sanitizeToolNameForAnalytics(
+      toolUseConfirm.tool.name,
+    ) as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+    isMcp: toolUseConfirm.tool.isMcp ?? false,
+    has_instructions: false,
+    instructions_length: 0,
+    entered_feedback_mode: false,
+  })
+
+  onDone()
+  toolUseConfirm.onAllow(toolUseConfirm.input, [
+    {
+      type: 'setMode',
+      mode: 'bypassPermissions',
+      destination: 'session',
+    },
+  ])
+}
+
 function handleReject(
   params: PermissionHandlerParams,
   options?: PermissionHandlerOptions,
@@ -181,5 +206,6 @@ export const PERMISSION_HANDLERS: Record<
 > = {
   'accept-once': handleAcceptOnce,
   'accept-session': handleAcceptSession,
+  'accept-bypass': handleAcceptBypass,
   reject: handleReject,
 }
