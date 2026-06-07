@@ -1,6 +1,6 @@
 {
   "name": "secai-cli",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": true,
   "type": "module",
   "bin": {
@@ -12,7 +12,6 @@
     "claude": "node dist/claude.mjs",
     "gateway:status": "node scripts/secai-gateway.mjs status",
     "gateway:prod": "node scripts/secai-gateway.mjs prod",
-    "gateway:local": "node scripts/secai-gateway.mjs local",
     "check:version": "node dist/claude.mjs --version",
     "check:help": "node dist/claude.mjs --help"
   },

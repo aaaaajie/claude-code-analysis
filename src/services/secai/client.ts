@@ -4,10 +4,7 @@ import { homedir } from 'os'
 import { dirname, join } from 'path'
 
 export const DEFAULT_SECAI_GATEWAY_URL = 'https://ai.rzsec.cn'
-const LEGACY_LOCAL_SECAI_GATEWAY_URL = 'http://localhost:8080'
 export const DEFAULT_SECAI_MODEL = 'sec-lab-lite'
-export const DEFAULT_SECAI_ENV_FILE = join(homedir(), '.secai', '.env')
-const DEFAULT_BOOTSTRAP_CREDIT_CNY = '1'
 let lastSecAIEnvLogKey: string | undefined
 
 export type SecAIModelPreset = {
@@ -125,13 +122,6 @@ export type SecAIUsageRecord = {
   error_message: string
 }
 
-type SecAIEnvDefaults = {
-  gatewayURL: string
-  apiKey?: string
-  adminToken?: string
-  bootstrapCreditCNY: string
-}
-
 export class SecAIRequestError extends Error {
   readonly status: number
   readonly retryAfter?: number
@@ -217,13 +207,6 @@ export function appendSecAILog(
 export function normalizeGatewayURL(raw: string | undefined): string {
   const value = (raw || DEFAULT_SECAI_GATEWAY_URL).trim()
   return value.replace(/\/+$/, '')
-}
-
-function normalizeStoredGatewayURL(raw: string | undefined): string {
-  const value = normalizeGatewayURL(raw)
-  return value === LEGACY_LOCAL_SECAI_GATEWAY_URL
-    ? DEFAULT_SECAI_GATEWAY_URL
-    : value
 }
 
 export function anthropicBaseURL(gatewayURL: string): string {
@@ -344,7 +327,6 @@ export function applySecAIEnv(config: SecAIConfig): void {
   process.env.ANTHROPIC_MODEL = normalizeSecAIModel(config.model)
   process.env.ANTHROPIC_SMALL_FAST_MODEL = DEFAULT_SECAI_MODEL
   process.env.DISABLE_PROMPT_CACHING = '1'
-  process.env.DISABLE_AUTOUPDATER ??= '1'
   process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC ??= '1'
   const logKey = [
     config.base_url,
@@ -478,196 +460,6 @@ export async function fetchUsage(
   })
 }
 
-async function loadDefaultSecAIConfig(): Promise<SecAIConfig | null> {
-  const envConfig = loadDefaultSecAIConfigSync()
-  const hasCallerProvidedKey =
-    process.env.SECAI_API_KEY ||
-    (process.env.SECAI_ACTIVE !== '1' && process.env.ANTHROPIC_API_KEY)
-  if (hasCallerProvidedKey) {
-    return envConfig
-  }
-
-  const defaults = loadSecAIEnvDefaults()
-  if (!defaults.adminToken) {
-    return envConfig
-  }
-
-  try {
-    return await bootstrapDefaultSecAIKey(defaults)
-  } catch {
-    return envConfig
-  }
-}
-
-function loadDefaultSecAIConfigSync(): SecAIConfig | null {
-  if (process.env.ANTHROPIC_API_KEY) {
-    return {
-      base_url: gatewayURLFromAnthropicBaseURL(
-        process.env.ANTHROPIC_BASE_URL || DEFAULT_SECAI_GATEWAY_URL,
-      ),
-      api_key: process.env.ANTHROPIC_API_KEY,
-      model: normalizeSecAIModel(process.env.ANTHROPIC_MODEL),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-  }
-
-  const defaults = loadSecAIEnvDefaults()
-  if (!defaults.apiKey) {
-    return null
-  }
-  return {
-    base_url: defaults.gatewayURL,
-    api_key: defaults.apiKey,
-    model: DEFAULT_SECAI_MODEL,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
-}
-
-function loadSecAIEnvDefaults(): SecAIEnvDefaults {
-  const fileEnv = readEnvFile(getSecAIEnvFile())
-  const gatewayURL = normalizeGatewayURL(
-    process.env.SECAI_GATEWAY_URL ||
-      gatewayURLFromAnthropicBaseURL(process.env.ANTHROPIC_BASE_URL) ||
-      fileEnv.SECAI_GATEWAY_URL ||
-      fileEnv.GATEWAY_BASE_URL ||
-      DEFAULT_SECAI_GATEWAY_URL,
-  )
-  const firstGatewayKey = splitFirst(fileEnv.GATEWAY_API_KEYS)
-  return {
-    gatewayURL,
-    apiKey:
-      trimOrUndefined(process.env.SECAI_API_KEY) ||
-      trimOrUndefined(process.env.ANTHROPIC_API_KEY) ||
-      firstGatewayKey,
-    adminToken:
-      trimOrUndefined(process.env.SECAI_ADMIN_TOKEN) ||
-      trimOrUndefined(fileEnv.ADMIN_TOKEN),
-    bootstrapCreditCNY:
-      trimOrUndefined(process.env.SECAI_BOOTSTRAP_CREDIT_CNY) ||
-      DEFAULT_BOOTSTRAP_CREDIT_CNY,
-  }
-}
-
-function getSecAIEnvFile(): string {
-  return trimOrUndefined(process.env.SECAI_ENV_FILE) || DEFAULT_SECAI_ENV_FILE
-}
-
-function readEnvFile(path: string): Record<string, string> {
-  if (!existsSync(path)) {
-    return {}
-  }
-  const result: Record<string, string> = {}
-  const raw = readFileSync(path, 'utf8')
-  for (const line of raw.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue
-    }
-    const match = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(
-      trimmed,
-    )
-    if (!match) {
-      continue
-    }
-    result[match[1]!] = unquoteEnvValue(match[2]!)
-  }
-  return result
-}
-
-function unquoteEnvValue(raw: string): string {
-  const value = raw.trim()
-  if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
-  ) {
-    return value.slice(1, -1)
-  }
-  return value
-}
-
-function splitFirst(value: string | undefined): string | undefined {
-  return trimOrUndefined(value?.split(',')[0])
-}
-
-function trimOrUndefined(value: string | undefined): string | undefined {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : undefined
-}
-
-async function bootstrapDefaultSecAIKey(
-  defaults: SecAIEnvDefaults,
-): Promise<SecAIConfig> {
-  const suffix = `${Date.now()}_${Math.random().toString(16).slice(2, 10)}`
-  const user = await secAIAdminFetchJSON<{ id: number }>(defaults, {
-    method: 'POST',
-    path: '/admin/users',
-    body: {
-      username: `secai_cli_${suffix}`,
-      nickname: 'SecAI CLI',
-      email: `secai_cli_${suffix}@local.test`,
-      status: 'active',
-      password: `secai-${suffix}`,
-    },
-  })
-
-  await secAIAdminFetchJSON(defaults, {
-    method: 'POST',
-    path: `/admin/users/${encodeURIComponent(String(user.id))}/credits`,
-    body: {
-      amount_cny: defaults.bootstrapCreditCNY,
-      memo: 'secai default bootstrap',
-    },
-  })
-
-  const key = await secAIAdminFetchJSON<{
-    api_key: string
-    record?: { prefix?: string }
-  }>(defaults, {
-    method: 'POST',
-    path: `/admin/users/${encodeURIComponent(String(user.id))}/api-keys`,
-    body: {
-      name: 'secai-default',
-    },
-  })
-
-  return saveSecAIConfig({
-    baseURL: defaults.gatewayURL,
-    apiKey: key.api_key,
-    model: DEFAULT_SECAI_MODEL,
-  })
-}
-
-async function secAIAdminFetchJSON<T>(
-  defaults: SecAIEnvDefaults,
-  input: {
-    method: 'POST'
-    path: string
-    body: unknown
-  },
-): Promise<T> {
-  const response = await fetch(defaults.gatewayURL + input.path, {
-    method: input.method,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'X-Admin-Token': defaults.adminToken || '',
-    },
-    body: JSON.stringify(input.body),
-  })
-  const text = await response.text()
-  const parsed = text ? tryParseJSON(text) : null
-  if (!response.ok) {
-    throw new SecAIRequestError(
-      extractErrorMessage(parsed) || response.statusText || 'SecAI admin request failed',
-      response.status,
-      parseRetryAfter(response.headers.get('Retry-After')),
-    )
-  }
-  return parsed as T
-}
-
 async function secAIFetchJSON<T>(input: {
   baseURL?: string
   apiKey?: string
@@ -715,7 +507,7 @@ function parseSecAIConfig(raw: string): SecAIConfig {
     throw new Error('invalid SecAI config: base_url and api_key are required')
   }
   return {
-    base_url: normalizeStoredGatewayURL(config.base_url),
+    base_url: normalizeGatewayURL(config.base_url),
     api_key: config.api_key,
     model: normalizeSecAIModel(config.model),
     user: parseSecAIUser(config.user),

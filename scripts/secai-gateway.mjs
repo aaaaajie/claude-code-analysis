@@ -6,7 +6,6 @@ import { dirname, join } from 'path'
 
 const GATEWAYS = {
   prod: 'https://ai.rzsec.cn',
-  local: 'http://localhost:8080',
 }
 
 const action = process.argv[2] || 'status'
@@ -56,7 +55,7 @@ async function main() {
 
   const target = GATEWAYS[action]
   if (!target) {
-    console.error('用法: npm run gateway:status | gateway:prod | gateway:local')
+    console.error('用法: npm run gateway:status | gateway:prod')
     process.exitCode = 1
     return
   }
