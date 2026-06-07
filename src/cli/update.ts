@@ -44,46 +44,13 @@ export async function update() {
     `update: Config install method: ${diagnostic.configInstallMethod}`,
   )
 
-  // Check for multiple installations
-  if (diagnostic.multipleInstallations.length > 1) {
-    writeToStdout('\n')
-    writeToStdout(chalk.yellow('Warning: Multiple installations found') + '\n')
-    for (const install of diagnostic.multipleInstallations) {
-      const current =
-        diagnostic.installationType === install.type
-          ? ' (currently running)'
-          : ''
-      writeToStdout(`- ${install.type} at ${install.path}${current}\n`)
-    }
-  }
-
-  // Display warnings if any exist
-  if (diagnostic.warnings.length > 0) {
-    writeToStdout('\n')
-    for (const warning of diagnostic.warnings) {
-      logForDebugging(`update: Warning detected: ${warning.issue}`)
-
-      // Don't skip PATH warnings - they're always relevant
-      // The user needs to know that 'which claude' points elsewhere
-      logForDebugging(`update: Showing warning: ${warning.issue}`)
-
-      writeToStdout(chalk.yellow(`Warning: ${warning.issue}\n`))
-
-      writeToStdout(chalk.bold(`Fix: ${warning.fix}\n`))
-    }
-  }
-
-  // Update config if installMethod is not set (but skip for package managers)
-  const config = getGlobalConfig()
+  let config = getGlobalConfig()
   if (
-    !config.installMethod &&
+    (!config.installMethod || config.installMethod === 'unknown') &&
     diagnostic.installationType !== 'package-manager'
   ) {
-    writeToStdout('\n')
-    writeToStdout('Updating configuration to track installation method...\n')
     let detectedMethod: 'local' | 'native' | 'global' | 'unknown' = 'unknown'
 
-    // Map diagnostic installation type to config install method
     switch (diagnostic.installationType) {
       case 'npm-local':
         detectedMethod = 'local'
@@ -98,11 +65,53 @@ export async function update() {
         detectedMethod = 'unknown'
     }
 
-    saveGlobalConfig(current => ({
-      ...current,
-      installMethod: detectedMethod,
-    }))
-    writeToStdout(`Installation method set to: ${detectedMethod}\n`)
+    if (detectedMethod !== 'unknown') {
+      saveGlobalConfig(current => ({
+        ...current,
+        installMethod: detectedMethod,
+      }))
+      config = { ...config, installMethod: detectedMethod }
+      writeToStdout(`Installation method set to: ${detectedMethod}\n`)
+    }
+  }
+
+  // Check for multiple installations
+  if (diagnostic.multipleInstallations.length > 1) {
+    writeToStdout('\n')
+    writeToStdout(chalk.yellow('Warning: Multiple installations found') + '\n')
+    for (const install of diagnostic.multipleInstallations) {
+      const current =
+        diagnostic.installationType === install.type
+          ? ' (currently running)'
+          : ''
+      writeToStdout(`- ${install.type} at ${install.path}${current}\n`)
+    }
+  }
+
+  // Display warnings if any exist
+  const warnings = diagnostic.warnings.filter(
+    warning =>
+      !(
+        config.installMethod === 'native' &&
+        warning.issue.startsWith(
+          'Running native installation but config install method',
+        )
+      ),
+  )
+
+  if (warnings.length > 0) {
+    writeToStdout('\n')
+    for (const warning of warnings) {
+      logForDebugging(`update: Warning detected: ${warning.issue}`)
+
+      // Don't skip PATH warnings - they're always relevant
+      // The user needs to know that 'which claude' points elsewhere
+      logForDebugging(`update: Showing warning: ${warning.issue}`)
+
+      writeToStdout(chalk.yellow(`Warning: ${warning.issue}\n`))
+
+      writeToStdout(chalk.bold(`Fix: ${warning.fix}\n`))
+    }
   }
 
   // Check if running from development build
@@ -294,9 +303,7 @@ export async function update() {
     process.stderr.write('  • Run with --debug flag for more details\n')
     const packageName =
       MACRO.PACKAGE_URL ||
-      (process.env.USER_TYPE === 'ant'
-        ? '@anthropic-ai/claude-cli'
-        : '@anthropic-ai/claude-code')
+      'secai-cli'
     process.stderr.write(
       `  • Manually check: npm view ${packageName} version\n`,
     )

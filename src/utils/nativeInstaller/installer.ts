@@ -40,7 +40,6 @@ import { getGlobalConfig, saveGlobalConfig } from '../config.js'
 import { logForDebugging } from '../debug.js'
 import { getCurrentInstallationType } from '../doctorDiagnostic.js'
 import { env } from '../env.js'
-import { envDynamic } from '../envDynamic.js'
 import { isEnvTruthy } from '../envUtils.js'
 import { errorMessage, getErrnoCode, isENOENT, toError } from '../errors.js'
 import { execFileNoThrowWithCwd } from '../execFileNoThrow.js'
@@ -85,8 +84,12 @@ export type SetupMessage = {
 }
 
 export function getPlatform(): string {
-  // Use env.platform which already handles platform detection and defaults to 'linux'
-  const os = env.platform
+  const os =
+    env.platform === 'darwin'
+      ? 'macos'
+      : env.platform === 'win32'
+        ? 'windows'
+        : env.platform
 
   const arch =
     process.arch === 'x64' ? 'x64' : process.arch === 'arm64' ? 'arm64' : null
@@ -100,16 +103,11 @@ export function getPlatform(): string {
     throw error
   }
 
-  // Check for musl on Linux and adjust platform accordingly
-  if (os === 'linux' && envDynamic.isMuslEnvironment()) {
-    return `linux-${arch}-musl`
-  }
-
   return `${os}-${arch}`
 }
 
 export function getBinaryName(platform: string): string {
-  return platform.startsWith('win32') ? 'secai.exe' : 'secai'
+  return platform.startsWith('windows') ? 'secai.exe' : 'secai'
 }
 
 function getBaseDirectories() {
@@ -641,7 +639,7 @@ async function updateSymlink(
   targetPath: string,
 ): Promise<boolean> {
   const platform = getPlatform()
-  const isWindows = platform.startsWith('win32')
+  const isWindows = platform.startsWith('windows')
 
   // On Windows, directly copy the executable instead of creating a symlink
   if (isWindows) {
@@ -832,7 +830,7 @@ export async function checkInstall(
   const localBinDir = dirname(dirs.executable)
   const resolvedLocalBinPath = resolve(localBinDir)
   const platform = getPlatform()
-  const isWindows = platform.startsWith('win32')
+  const isWindows = platform.startsWith('windows')
 
   // Check if bin directory exists
   try {
@@ -1189,7 +1187,7 @@ export async function cleanupOldVersions(): Promise<void> {
   const oneHourAgo = Date.now() - 3600000
 
   // Clean up old renamed executables on Windows (no longer running at startup)
-  if (getPlatform().startsWith('win32')) {
+  if (getPlatform().startsWith('windows')) {
     const executableDir = dirname(dirs.executable)
     try {
       const files = await readdir(executableDir)
@@ -1556,10 +1554,9 @@ async function manualRemoveNpmPackage(
       }
     }
 
-    const commandName =
-      packageName === '@anthropic-ai/claude-code' ? 'claude' : 'secai'
+    const commandName = 'secai'
 
-    if (getPlatform().startsWith('win32')) {
+    if (getPlatform().startsWith('windows')) {
       // Windows - only remove executables, not the package directory
       const binCmd = join(globalPrefix, `${commandName}.cmd`)
       const binPs1 = join(globalPrefix, `${commandName}.ps1`)
@@ -1587,7 +1584,7 @@ async function manualRemoveNpmPackage(
 
     if (manuallyRemoved) {
       logForDebugging(`Successfully removed ${packageName} manually`)
-      const nodeModulesPath = getPlatform().startsWith('win32')
+      const nodeModulesPath = getPlatform().startsWith('windows')
         ? join(globalPrefix, 'node_modules', packageName)
         : join(globalPrefix, 'lib', 'node_modules', packageName)
 
@@ -1665,21 +1662,7 @@ export async function cleanupNpmInstallations(): Promise<{
   const warnings: string[] = []
   let removed = 0
 
-  // Always attempt to remove @anthropic-ai/claude-code
-  const codePackageResult = await attemptNpmUninstall(
-    '@anthropic-ai/claude-code',
-  )
-  if (codePackageResult.success) {
-    removed++
-    if (codePackageResult.warning) {
-      warnings.push(codePackageResult.warning)
-    }
-  } else if (codePackageResult.error) {
-    errors.push(codePackageResult.error)
-  }
-
-  // Also attempt to remove MACRO.PACKAGE_URL if it's defined and different
-  if (MACRO.PACKAGE_URL && MACRO.PACKAGE_URL !== '@anthropic-ai/claude-code') {
+  if (MACRO.PACKAGE_URL) {
     const macroPackageResult = await attemptNpmUninstall(MACRO.PACKAGE_URL)
     if (macroPackageResult.success) {
       removed++

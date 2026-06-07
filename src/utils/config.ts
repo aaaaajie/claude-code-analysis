@@ -1746,8 +1746,7 @@ export function getAutoUpdaterDisabledReason(): AutoUpdaterDisabledReason | null
   const config = getGlobalConfig()
   if (
     config.autoUpdates === false &&
-    (config.installMethod !== 'native' ||
-      config.autoUpdatesProtectedForNative !== true)
+    config.autoUpdatesProtectedForNative !== true
   ) {
     return { type: 'config' }
   }
