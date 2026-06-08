@@ -100,6 +100,7 @@ function ResumeCommand({
   const [loading, setLoading] = React.useState(true);
   const [resuming, setResuming] = React.useState(false);
   const [showAllProjects, setShowAllProjects] = React.useState(false);
+  const resumeStartedRef = React.useRef(false);
   const {
     rows
   } = useTerminalSize();
@@ -139,6 +140,10 @@ function ResumeCommand({
       onDone('恢复对话失败');
       return;
     }
+    if (resumeStartedRef.current) {
+      return;
+    }
+    resumeStartedRef.current = true;
 
     // Load full messages for lite logs
     const fullLog = isLiteLog(log) ? await loadFullLog(log) : log;

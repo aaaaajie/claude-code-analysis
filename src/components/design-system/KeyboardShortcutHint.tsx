@@ -90,6 +90,8 @@ function getShortcutActionLabel(action: string): string {
       return '查看详情'
     case 'dismiss':
       return '关闭'
+    case 'close':
+      return '关闭'
     case 'confirm':
       return '确认'
     case 'copy':
@@ -144,6 +146,28 @@ function getShortcutActionLabel(action: string): string {
       return '更新'
     case 'view tasks':
       return '查看任务'
+    case 'view':
+      return '查看'
+    case 'foreground':
+      return '切到前台'
+    case 'stop':
+      return '停止'
+    case 'stop all agents':
+      return '停止所有智能体'
+    case 'toggle selection':
+      return '切换选择'
+    case 'toggle':
+      return '切换'
+    case 'enter text':
+      return '输入文本'
+    case 'continue':
+      return '继续'
+    case 'open in editor':
+      return '在编辑器中打开'
+    case 'exit':
+      return '退出'
+    case 'teleport':
+      return '接管'
     case 'write to file':
       return '写入文件'
     default:

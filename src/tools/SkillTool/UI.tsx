@@ -16,22 +16,22 @@ import { plural } from '../../utils/stringUtils.js';
 import type { inputSchema, Output, Progress } from './SkillTool.js';
 type Input = z.infer<ReturnType<typeof inputSchema>>;
 const MAX_PROGRESS_MESSAGES_TO_SHOW = 3;
-const INITIALIZING_TEXT = 'Initializing…';
+const INITIALIZING_TEXT = '正在初始化…';
 export function renderToolResultMessage(output: Output): React.ReactNode {
   // Handle forked skill result
   if ('status' in output && output.status === 'forked') {
     return <MessageResponse height={1}>
         <Text>
-          <Byline>{['Done']}</Byline>
+          <Byline>{['完成']}</Byline>
         </Text>
       </MessageResponse>;
   }
-  const parts: string[] = ['Successfully loaded skill'];
+  const parts: string[] = ['已加载技能'];
 
   // Show tools count (only for inline skills)
   if ('allowedTools' in output && output.allowedTools && output.allowedTools.length > 0) {
     const count = output.allowedTools.length;
-    parts.push(`${count} ${plural(count, 'tool')} allowed`);
+    parts.push(`允许 ${count} 个工具`);
   }
 
   // Show model if non-default (only for inline skills)
@@ -86,7 +86,7 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
             </Box>)}
         </SubAgentProvider>
         {hiddenCount > 0 && <Text dimColor>
-            +{hiddenCount} more tool {plural(hiddenCount, 'use')}
+            还有 {hiddenCount} 次工具调用未显示
           </Text>}
       </Box>
     </MessageResponse>;

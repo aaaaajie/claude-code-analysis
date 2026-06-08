@@ -120,7 +120,7 @@ export function DreamDetailDialog(t0) {
       t19 = $[36];
     }
     if ($[37] !== elapsedTime || $[38] !== t18 || $[39] !== t19 || $[40] !== task.sessionsReviewing) {
-      t9 = <Text dimColor={true}>{elapsedTime} · reviewing {t17}{" "}{t18}{t19}</Text>;
+      t9 = <Text dimColor={true}>{elapsedTime} · 正在检查 {t17}{" "}{t18}{t19}</Text>;
       $[37] = elapsedTime;
       $[38] = t18;
       $[39] = t19;
@@ -132,7 +132,7 @@ export function DreamDetailDialog(t0) {
     t10 = onDone;
     t11 = "background";
     if ($[42] !== onBack || $[43] !== onKill || $[44] !== task.status) {
-      t12 = exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>{onBack && <KeyboardShortcutHint shortcut={"\u2190"} action="go back" />}<KeyboardShortcutHint shortcut="Esc/Enter/Space" action="close" />{task.status === "running" && onKill && <KeyboardShortcutHint shortcut="x" action="stop" />}</Byline>;
+      t12 = exitState => exitState.pending ? <Text>再次按 {exitState.keyName} 退出</Text> : <Byline>{onBack && <KeyboardShortcutHint shortcut={"\u2190"} action="返回" />}<KeyboardShortcutHint shortcut="Esc/Enter/Space" action="关闭" />{task.status === "running" && onKill && <KeyboardShortcutHint shortcut="x" action="停止" />}</Byline>;
       $[42] = onBack;
       $[43] = onKill;
       $[44] = task.status;

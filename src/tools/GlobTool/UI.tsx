@@ -9,7 +9,7 @@ import { FILE_NOT_FOUND_CWD_NOTE, getDisplayPath } from '../../utils/file.js';
 import { truncate } from '../../utils/format.js';
 import { GrepTool } from '../GrepTool/GrepTool.js';
 export function userFacingName(): string {
-  return 'Search';
+  return '搜索';
 }
 export function renderToolUseMessage({
   pattern,
@@ -26,9 +26,9 @@ export function renderToolUseMessage({
     return null;
   }
   if (!path) {
-    return `pattern: "${pattern}"`;
+    return `模式: "${pattern}"`;
   }
-  return `pattern: "${pattern}", path: "${verbose ? path : getDisplayPath(path)}"`;
+  return `模式: "${pattern}", 路径: "${verbose ? path : getDisplayPath(path)}"`;
 }
 export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'], {
   verbose
@@ -39,11 +39,11 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
     const errorMessage = extractTag(result, 'tool_use_error');
     if (errorMessage?.includes(FILE_NOT_FOUND_CWD_NOTE)) {
       return <MessageResponse>
-          <Text color="error">File not found</Text>
+          <Text color="error">文件未找到</Text>
         </MessageResponse>;
     }
     return <MessageResponse>
-        <Text color="error">Error searching files</Text>
+        <Text color="error">搜索文件失败</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;

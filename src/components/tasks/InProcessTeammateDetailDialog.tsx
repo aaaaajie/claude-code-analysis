@@ -151,7 +151,7 @@ export function InProcessTeammateDetailDialog(t0) {
   const title = t10;
   let t11;
   if ($[24] !== teammate.status) {
-    t11 = teammate.status !== "running" && <Text color={teammate.status === "completed" ? "success" : teammate.status === "killed" ? "warning" : "error"}>{teammate.status === "completed" ? "Completed" : teammate.status === "failed" ? "Failed" : "Stopped"}{" \xB7 "}</Text>;
+    t11 = teammate.status !== "running" && <Text color={teammate.status === "completed" ? "success" : teammate.status === "killed" ? "warning" : "error"}>{teammate.status === "completed" ? "已完成" : teammate.status === "failed" ? "失败" : "已停止"}{" \xB7 "}</Text>;
     $[24] = teammate.status;
     $[25] = t11;
   } else {
@@ -167,7 +167,7 @@ export function InProcessTeammateDetailDialog(t0) {
   }
   let t13;
   if ($[28] !== toolUseCount) {
-    t13 = toolUseCount !== undefined && toolUseCount > 0 && <>{" "}· {toolUseCount} {toolUseCount === 1 ? "tool" : "tools"}</>;
+    t13 = toolUseCount !== undefined && toolUseCount > 0 && <>{" "}· {toolUseCount} 次工具调用</>;
     $[28] = toolUseCount;
     $[29] = t13;
   } else {
@@ -195,7 +195,7 @@ export function InProcessTeammateDetailDialog(t0) {
   const subtitle = t15;
   let t16;
   if ($[37] !== onBack || $[38] !== onForeground || $[39] !== onKill || $[40] !== teammate.status) {
-    t16 = exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>{onBack && <KeyboardShortcutHint shortcut={"\u2190"} action="go back" />}<KeyboardShortcutHint shortcut="Esc/Enter/Space" action="close" />{teammate.status === "running" && onKill && <KeyboardShortcutHint shortcut="x" action="stop" />}{teammate.status === "running" && onForeground && <KeyboardShortcutHint shortcut="f" action="foreground" />}</Byline>;
+    t16 = exitState => exitState.pending ? <Text>再次按 {exitState.keyName} 退出</Text> : <Byline>{onBack && <KeyboardShortcutHint shortcut={"\u2190"} action="返回" />}<KeyboardShortcutHint shortcut="Esc/Enter/Space" action="关闭" />{teammate.status === "running" && onKill && <KeyboardShortcutHint shortcut="x" action="停止" />}{teammate.status === "running" && onForeground && <KeyboardShortcutHint shortcut="f" action="切到前台" />}</Byline>;
     $[37] = onBack;
     $[38] = onForeground;
     $[39] = onKill;
@@ -206,7 +206,7 @@ export function InProcessTeammateDetailDialog(t0) {
   }
   let t17;
   if ($[42] !== teammate.progress || $[43] !== teammate.status || $[44] !== theme) {
-    t17 = teammate.status === "running" && teammate.progress?.recentActivities && teammate.progress.recentActivities.length > 0 && <Box flexDirection="column"><Text bold={true} dimColor={true}>Progress</Text>{teammate.progress.recentActivities.map((activity_0, i) => <Text key={i} dimColor={i < teammate.progress.recentActivities.length - 1} wrap="truncate-end">{i === teammate.progress.recentActivities.length - 1 ? "\u203A " : "  "}{renderToolActivity(activity_0, tools, theme)}</Text>)}</Box>;
+    t17 = teammate.status === "running" && teammate.progress?.recentActivities && teammate.progress.recentActivities.length > 0 && <Box flexDirection="column"><Text bold={true} dimColor={true}>进度</Text>{teammate.progress.recentActivities.map((activity_0, i) => <Text key={i} dimColor={i < teammate.progress.recentActivities.length - 1} wrap="truncate-end">{i === teammate.progress.recentActivities.length - 1 ? "\u203A " : "  "}{renderToolActivity(activity_0, tools, theme)}</Text>)}</Box>;
     $[42] = teammate.progress;
     $[43] = teammate.status;
     $[44] = theme;
@@ -216,7 +216,7 @@ export function InProcessTeammateDetailDialog(t0) {
   }
   let t18;
   if ($[46] === Symbol.for("react.memo_cache_sentinel")) {
-    t18 = <Text bold={true} dimColor={true}>Prompt</Text>;
+    t18 = <Text bold={true} dimColor={true}>提示词</Text>;
     $[46] = t18;
   } else {
     t18 = $[46];
@@ -231,7 +231,7 @@ export function InProcessTeammateDetailDialog(t0) {
   }
   let t20;
   if ($[49] !== teammate.error || $[50] !== teammate.status) {
-    t20 = teammate.status === "failed" && teammate.error && <Box flexDirection="column" marginTop={1}><Text bold={true} color="error">Error</Text><Text color="error" wrap="wrap">{teammate.error}</Text></Box>;
+    t20 = teammate.status === "failed" && teammate.error && <Box flexDirection="column" marginTop={1}><Text bold={true} color="error">错误</Text><Text color="error" wrap="wrap">{teammate.error}</Text></Box>;
     $[49] = teammate.error;
     $[50] = teammate.status;
     $[51] = t20;

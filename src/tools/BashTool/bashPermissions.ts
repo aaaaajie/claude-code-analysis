@@ -1226,7 +1226,7 @@ export async function checkCommandAndSuggestRules(
         reason:
           safetyResult.behavior === 'ask' && safetyResult.message
             ? safetyResult.message
-            : 'This command contains patterns that could pose security risks and requires approval',
+            : '该命令包含需要人工确认的模式，请确认后继续',
       }
 
       return {

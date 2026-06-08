@@ -18,13 +18,13 @@ export function CapabilitiesSection(t0) {
   if ($[0] !== serverPromptsCount || $[1] !== serverResourcesCount || $[2] !== serverToolsCount) {
     capabilities = [];
     if (serverToolsCount > 0) {
-      capabilities.push("tools");
+      capabilities.push("工具");
     }
     if (serverResourcesCount > 0) {
-      capabilities.push("resources");
+      capabilities.push("资源");
     }
     if (serverPromptsCount > 0) {
-      capabilities.push("prompts");
+      capabilities.push("提示词");
     }
     $[0] = serverPromptsCount;
     $[1] = serverResourcesCount;
@@ -35,14 +35,14 @@ export function CapabilitiesSection(t0) {
   }
   let t1;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = <Text bold={true}>Capabilities: </Text>;
+    t1 = <Text bold={true}>能力： </Text>;
     $[4] = t1;
   } else {
     t1 = $[4];
   }
   let t2;
   if ($[5] !== capabilities) {
-    t2 = capabilities.length > 0 ? <Byline>{capabilities}</Byline> : "none";
+    t2 = capabilities.length > 0 ? <Byline>{capabilities}</Byline> : "无";
     $[5] = capabilities;
     $[6] = t2;
   } else {

@@ -85,13 +85,13 @@ export function FileWritePermissionRequest(props) {
     fileExists,
     oldContent
   } = t1;
-  const actionText = fileExists ? "overwrite" : "create";
+  const actionText = fileExists ? "覆盖" : "创建";
   const t2 = props.toolUseConfirm;
   const t3 = props.toolUseContext;
   const t4 = props.onDone;
   const t5 = props.onReject;
   const t6 = props.workerBadge;
-  const t7 = fileExists ? "Overwrite file" : "Create file";
+  const t7 = fileExists ? "覆盖文件" : "创建文件";
   let t8;
   if ($[5] !== file_path) {
     t8 = relative(getCwd(), file_path);
@@ -118,7 +118,7 @@ export function FileWritePermissionRequest(props) {
   }
   let t11;
   if ($[11] !== actionText || $[12] !== t10) {
-    t11 = <Text>Do you want to {actionText} {t10}?</Text>;
+    t11 = <Text>是否{actionText} {t10}？</Text>;
     $[11] = actionText;
     $[12] = t10;
     $[13] = t11;

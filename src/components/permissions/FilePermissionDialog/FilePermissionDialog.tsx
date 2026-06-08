@@ -162,7 +162,7 @@ export function FilePermissionDialog<T extends ToolInput = ToolInput>({
   const isSymlinkOutsideCwd = symlinkTarget != null && relative(getCwd(), symlinkTarget).startsWith('..');
   const symlinkWarning = symlinkTarget ? <Box paddingX={1} marginBottom={1}>
       <Text color="warning">
-        {isSymlinkOutsideCwd ? `This will modify ${symlinkTarget} (outside working directory) via a symlink` : `Symlink target: ${symlinkTarget}`}
+        {isSymlinkOutsideCwd ? `这将通过符号链接修改工作目录外的 ${symlinkTarget}` : `符号链接目标：${symlinkTarget}`}
       </Text>
     </Box> : null;
   return <>

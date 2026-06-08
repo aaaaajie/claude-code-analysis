@@ -12,11 +12,11 @@ function commandListDisplay(commands: string[]): ReactNode {
       return <Text bold>{commands[0]}</Text>;
     case 2:
       return <Text>
-          <Text bold>{commands[0]}</Text> and <Text bold>{commands[1]}</Text>
+          <Text bold>{commands[0]}</Text> 和 <Text bold>{commands[1]}</Text>
         </Text>;
     default:
       return <Text>
-          <Text bold>{commands.slice(0, -1).join(', ')}</Text>, and{' '}
+          <Text bold>{commands.slice(0, -1).join(', ')}</Text> 和{' '}
           <Text bold>{commands.slice(-1)[0]}</Text>
         </Text>;
   }
@@ -25,7 +25,7 @@ function commandListDisplayTruncated(commands: string[]): ReactNode {
   // Check if the plain text representation would be too long
   const plainText = commands.join(', ');
   if (plainText.length > 50) {
-    return 'similar';
+    return '类似';
   }
   return commandListDisplay(commands);
 }
@@ -43,7 +43,7 @@ function formatPathList(paths: string[]): ReactNode {
   if (names.length === 2) {
     return <Text>
         <Text bold>{names[0]}</Text>
-        {sep} and <Text bold>{names[1]}</Text>
+        {sep} 和 <Text bold>{names[1]}</Text>
         {sep}
       </Text>;
   }
@@ -52,7 +52,7 @@ function formatPathList(paths: string[]): ReactNode {
   return <Text>
       <Text bold>{names[0]}</Text>
       {sep}, <Text bold>{names[1]}</Text>
-      {sep} and {paths.length - 2} more
+      {sep} 等 {paths.length} 项
     </Text>;
 }
 
@@ -95,14 +95,14 @@ export function generateShellSuggestionsLabel(suggestions: PermissionUpdate[], s
       const firstPath = readPaths[0]!;
       const dirName = basename(firstPath) || firstPath;
       return <Text>
-          Yes, allow reading from <Text bold>{dirName}</Text>
-          {sep} from this project
+          允许读取本项目中的 <Text bold>{dirName}</Text>
+          {sep}
         </Text>;
     }
 
     // Multiple read paths
     return <Text>
-        Yes, allow reading from {formatPathList(readPaths)} from this project
+        允许读取本项目中的 {formatPathList(readPaths)}
       </Text>;
   }
   if (hasDirectories && !hasReadPaths && !hasCommands) {
@@ -111,22 +111,21 @@ export function generateShellSuggestionsLabel(suggestions: PermissionUpdate[], s
       const firstDir = directories[0]!;
       const dirName = basename(firstDir) || firstDir;
       return <Text>
-          Yes, and always allow access to <Text bold>{dirName}</Text>
-          {sep} from this project
+          允许并始终允许访问本项目中的 <Text bold>{dirName}</Text>
+          {sep}
         </Text>;
     }
 
     // Multiple directories
     return <Text>
-        Yes, and always allow access to {formatPathList(directories)} from this
-        project
+        允许并始终允许访问本项目中的 {formatPathList(directories)}
       </Text>;
   }
   if (hasCommands && !hasDirectories && !hasReadPaths) {
     // Only shell command permissions
     return <Text>
-        {"Yes, and don't ask again for "}
-        {commandListDisplayTruncated(shellCommands)} commands in{' '}
+        {'允许，后续不再询问 '}
+        {commandListDisplayTruncated(shellCommands)} 命令，目录为{' '}
         <Text bold>{getOriginalCwd()}</Text>
       </Text>;
   }
@@ -138,8 +137,7 @@ export function generateShellSuggestionsLabel(suggestions: PermissionUpdate[], s
     if (hasDirectories && hasReadPaths) {
       // Mixed - use generic "access to"
       return <Text>
-          Yes, and always allow access to {formatPathList(allPaths)} from this
-          project
+          允许并始终允许访问本项目中的 {formatPathList(allPaths)}
         </Text>;
     }
   }
@@ -150,13 +148,13 @@ export function generateShellSuggestionsLabel(suggestions: PermissionUpdate[], s
     // Keep it concise but informative
     if (allPaths.length === 1 && shellCommands.length === 1) {
       return <Text>
-          Yes, and allow access to {formatPathList(allPaths)} and{' '}
-          {commandListDisplayTruncated(shellCommands)} commands
+          允许访问 {formatPathList(allPaths)}，并允许{' '}
+          {commandListDisplayTruncated(shellCommands)} 命令
         </Text>;
     }
     return <Text>
-        Yes, and allow {formatPathList(allPaths)} access and{' '}
-        {commandListDisplayTruncated(shellCommands)} commands
+        允许访问 {formatPathList(allPaths)}，并允许{' '}
+        {commandListDisplayTruncated(shellCommands)} 命令
       </Text>;
   }
   return null;

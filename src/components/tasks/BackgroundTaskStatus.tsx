@@ -172,7 +172,7 @@ export function BackgroundTaskStatus(t0) {
     }
     let t15;
     if ($[32] === Symbol.for("react.memo_cache_sentinel")) {
-      t15 = <Text dimColor={true}>{" \xB7 "}<KeyboardShortcutHint shortcut={"shift + \u2193"} action="expand" /></Text>;
+      t15 = <Text dimColor={true}>{" \xB7 "}<KeyboardShortcutHint shortcut={"shift + \u2193"} action="展开" /></Text>;
       $[32] = t15;
     } else {
       t15 = $[32];
@@ -215,7 +215,7 @@ export function BackgroundTaskStatus(t0) {
   }
   let t10;
   if ($[43] !== runningTasks) {
-    t10 = pillNeedsCta(runningTasks) && <Text dimColor={true}> · {figures.arrowDown} to view</Text>;
+    t10 = pillNeedsCta(runningTasks) && <Text dimColor={true}> · {figures.arrowDown} 查看</Text>;
     $[43] = runningTasks;
     $[44] = t10;
   } else {

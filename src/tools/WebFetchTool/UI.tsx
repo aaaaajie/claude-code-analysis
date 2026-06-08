@@ -22,13 +22,13 @@ export function renderToolUseMessage({
     return null;
   }
   if (verbose) {
-    return `url: "${url}"${verbose && prompt ? `, prompt: "${prompt}"` : ''}`;
+    return `URL: "${url}"${verbose && prompt ? `, 提示词: "${prompt}"` : ''}`;
   }
   return url;
 }
 export function renderToolUseProgressMessage(): React.ReactNode {
   return <MessageResponse height={1}>
-      <Text dimColor>Fetching…</Text>
+      <Text dimColor>正在获取…</Text>
     </MessageResponse>;
 }
 export function renderToolResultMessage({
@@ -46,7 +46,7 @@ export function renderToolResultMessage({
     return <Box flexDirection="column">
         <MessageResponse height={1}>
           <Text>
-            Received <Text bold>{formattedSize}</Text> ({code} {codeText})
+            已接收 <Text bold>{formattedSize}</Text>（{code} {codeText}）
           </Text>
         </MessageResponse>
         <Box flexDirection="column">
@@ -56,7 +56,7 @@ export function renderToolResultMessage({
   }
   return <MessageResponse height={1}>
       <Text>
-        Received <Text bold>{formattedSize}</Text> ({code} {codeText})
+        已接收 <Text bold>{formattedSize}</Text>（{code} {codeText}）
       </Text>
     </MessageResponse>;
 }

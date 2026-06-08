@@ -73,7 +73,7 @@ export function WebFetchPermissionRequest(t0) {
   let t4;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = {
-      label: "Yes",
+      label: "允许",
       value: "yes"
     };
     $[4] = t4;
@@ -88,7 +88,7 @@ export function WebFetchPermissionRequest(t0) {
       let t6;
       if ($[7] !== t5) {
         t6 = {
-          label: <Text>Yes, and don't ask again for {t5}</Text>,
+          label: <Text>允许，后续不再询问 {t5}</Text>,
           value: "yes-dont-ask-again-domain"
         };
         $[7] = t5;
@@ -101,7 +101,7 @@ export function WebFetchPermissionRequest(t0) {
     let t5;
     if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
       t5 = {
-        label: <Text>No, and tell SecAI what to do differently <Text bold={true}>(esc)</Text></Text>,
+        label: <Text>拒绝，并告诉 SecAI 应该怎么调整 <Text bold={true}>(esc)</Text></Text>,
         value: "no"
       };
       $[9] = t5;
@@ -211,7 +211,7 @@ export function WebFetchPermissionRequest(t0) {
   }
   let t11;
   if ($[27] === Symbol.for("react.memo_cache_sentinel")) {
-    t11 = <Text>Do you want to allow SecAI to fetch this content?</Text>;
+    t11 = <Text>是否允许 SecAI 获取这段内容？</Text>;
     $[27] = t11;
   } else {
     t11 = $[27];
@@ -245,7 +245,7 @@ export function WebFetchPermissionRequest(t0) {
   }
   let t15;
   if ($[37] !== t14 || $[38] !== t9 || $[39] !== workerBadge) {
-    t15 = <PermissionDialog title="Fetch" workerBadge={workerBadge}>{t9}{t14}</PermissionDialog>;
+    t15 = <PermissionDialog title="获取网页内容" workerBadge={workerBadge}>{t9}{t14}</PermissionDialog>;
     $[37] = t14;
     $[38] = t9;
     $[39] = workerBadge;

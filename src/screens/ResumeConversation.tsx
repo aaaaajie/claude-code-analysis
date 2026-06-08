@@ -102,6 +102,7 @@ export function ResumeConversation({
     mainThreadAgentDefinition?: AgentDefinition;
   } | null>(null);
   const [crossProjectCommand, setCrossProjectCommand] = React.useState<string | null>(null);
+  const resumeStartedRef = React.useRef(false);
   const sessionLogResultRef = React.useRef<SessionLogResult | null>(null);
   // Mirror of logs.length so loadMoreLogs can compute value indices outside
   // the setLogs updater (keeping it pure per React's contract).
@@ -176,6 +177,10 @@ export function ResumeConversation({
     process.exit(1);
   }
   async function onSelect(log_0: LogOption) {
+    if (resumeStartedRef.current) {
+      return;
+    }
+    resumeStartedRef.current = true;
     setResuming(true);
     const resumeStart = performance.now();
     const crossProjectCheck = checkCrossProjectResume(log_0, showAllProjects, worktreePaths);

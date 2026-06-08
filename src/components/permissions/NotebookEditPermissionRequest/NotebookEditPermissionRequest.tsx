@@ -38,16 +38,16 @@ export function NotebookEditPermissionRequest(props) {
     } = parsed;
     notebook_path = t11;
     language = cell_type === "markdown" ? "markdown" : "python";
-    const editTypeText = edit_mode === "insert" ? "insert this cell into" : edit_mode === "delete" ? "delete this cell from" : "make this edit to";
+    const editTypeText = edit_mode === "insert" ? "插入这个单元格到" : edit_mode === "delete" ? "从中删除这个单元格" : "将这次编辑应用到";
     T2 = FilePermissionDialog;
     t5 = props.toolUseConfirm;
     t6 = props.toolUseContext;
     t7 = props.onDone;
     t8 = props.onReject;
     t9 = props.workerBadge;
-    t10 = "Edit notebook";
+    t10 = "编辑笔记本";
     T1 = Text;
-    t2 = "Do you want to ";
+    t2 = "是否";
     t3 = editTypeText;
     t4 = " ";
     T0 = Text;
@@ -106,7 +106,7 @@ export function NotebookEditPermissionRequest(props) {
   }
   let t12;
   if ($[26] !== T1 || $[27] !== t11 || $[28] !== t2 || $[29] !== t3 || $[30] !== t4) {
-    t12 = <T1>{t2}{t3}{t4}{t11}?</T1>;
+    t12 = <T1>{t2}{t3}{t4}{t11}？</T1>;
     $[26] = T1;
     $[27] = t11;
     $[28] = t2;

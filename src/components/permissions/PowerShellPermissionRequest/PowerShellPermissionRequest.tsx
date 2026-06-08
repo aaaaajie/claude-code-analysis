@@ -207,7 +207,7 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
         }
     }
   }
-  return <PermissionDialog workerBadge={workerBadge} title="PowerShell command">
+  return <PermissionDialog workerBadge={workerBadge} title="PowerShell 命令">
       <Box flexDirection="column" paddingX={2} paddingY={1}>
         <Text dimColor={explainerState.visible}>
           {PowerShellTool.renderToolUseMessage({
@@ -225,7 +225,7 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
       {showPermissionDebug ? <>
           <PermissionDecisionDebugInfo permissionResult={toolUseConfirm.permissionResult} toolName="PowerShell" />
           {toolUseContext.options.debug && <Box justifyContent="flex-end" marginTop={1}>
-              <Text dimColor>Ctrl-D to hide debug info</Text>
+              <Text dimColor>Ctrl-D 隐藏调试信息</Text>
             </Box>}
         </> : <>
           <Box flexDirection="column">
@@ -242,7 +242,7 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
               {(focusedOption === 'yes' && !yesInputMode || focusedOption === 'no' && !noInputMode) && ' · Tab 补充说明'}
               {explainerState.enabled && ` · ctrl+e ${explainerState.visible ? '隐藏说明' : '解释'}`}
             </Text>
-            {toolUseContext.options.debug && <Text dimColor>Ctrl+d to show debug info</Text>}
+            {toolUseContext.options.debug && <Text dimColor>Ctrl+d 显示调试信息</Text>}
           </Box>
         </>}
     </PermissionDialog>;

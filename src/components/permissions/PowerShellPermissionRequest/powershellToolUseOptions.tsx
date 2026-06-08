@@ -27,15 +27,15 @@ export function powershellToolUseOptions({
   if (yesInputMode) {
     options.push({
       type: 'input',
-      label: 'Yes',
+      label: '允许',
       value: 'yes',
-      placeholder: 'and tell SecAI what to do next',
+      placeholder: '并告诉 SecAI 接下来怎么做',
       onChange: onAcceptFeedbackChange,
       allowEmptySubmitToCancel: true
     });
   } else {
     options.push({
-      label: 'Yes',
+      label: '允许',
       value: 'yes'
     });
   }
@@ -53,9 +53,9 @@ export function powershellToolUseOptions({
     if (editablePrefix !== undefined && onEditablePrefixChange && !hasNonPowerShellSuggestions) {
       options.push({
         type: 'input',
-        label: 'Yes, and don\u2019t ask again for',
+        label: '允许，后续不再询问',
         value: 'yes-prefix-edited',
-        placeholder: 'command prefix (e.g., Get-Process:*)',
+        placeholder: '命令前缀，例如 Get-Process:*',
         initialValue: editablePrefix,
         onChange: onEditablePrefixChange,
         allowEmptySubmitToCancel: true,
@@ -75,22 +75,22 @@ export function powershellToolUseOptions({
   }
   if (canBypassPermissions) {
     options.push({
-      label: '是，本次允许并后续跳过权限',
+      label: '允许，并开启后续跳过权限',
       value: 'yes-bypass-permissions'
     });
   }
   if (noInputMode) {
     options.push({
       type: 'input',
-      label: 'No',
+      label: '拒绝',
       value: 'no',
-      placeholder: 'and tell SecAI what to do differently',
+      placeholder: '并告诉 SecAI 应该怎么调整',
       onChange: onRejectFeedbackChange,
       allowEmptySubmitToCancel: true
     });
   } else {
     options.push({
-      label: 'No',
+      label: '拒绝',
       value: 'no'
     });
   }

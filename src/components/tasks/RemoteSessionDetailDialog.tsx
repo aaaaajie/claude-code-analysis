@@ -773,7 +773,7 @@ function ReviewSessionDetail(t0) {
   return t20;
 }
 function _temp(exitState) {
-  return exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline><KeyboardShortcutHint shortcut="Enter" action="select" /><KeyboardShortcutHint shortcut="Esc" action="go back" /></Byline>;
+  return exitState.pending ? <Text>再次按 {exitState.keyName} 退出</Text> : <Byline><KeyboardShortcutHint shortcut="Enter" action="select" /><KeyboardShortcutHint shortcut="Esc" action="go back" /></Byline>;
 }
 export function RemoteSessionDetailDialog({
   session,
@@ -845,30 +845,31 @@ export function RemoteSessionDetailDialog({
 
   // Map TaskStatus to display status (handle 'pending')
   const displayStatus = session.status === 'pending' ? 'starting' : session.status;
+  const displayStatusText = displayStatus === 'starting' ? '启动中' : displayStatus === 'running' ? '运行中' : displayStatus === 'completed' ? '已完成' : displayStatus === 'failed' ? '失败' : '已停止';
   return <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
-      <Dialog title="Remote session details" onCancel={handleClose} color="background" inputGuide={exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>
+      <Dialog title="远程会话详情" onCancel={handleClose} color="background" inputGuide={exitState => exitState.pending ? <Text>再次按 {exitState.keyName} 退出</Text> : <Byline>
               {onBack && <KeyboardShortcutHint shortcut="←" action="go back" />}
               <KeyboardShortcutHint shortcut="Esc/Enter/Space" action="close" />
               {!isTeleporting && <KeyboardShortcutHint shortcut="t" action="teleport" />}
             </Byline>}>
         <Box flexDirection="column">
           <Text>
-            <Text bold>Status</Text>:{' '}
-            {displayStatus === 'running' || displayStatus === 'starting' ? <Text color="background">{displayStatus}</Text> : displayStatus === 'completed' ? <Text color="success">{displayStatus}</Text> : <Text color="error">{displayStatus}</Text>}
+            <Text bold>状态</Text>:{' '}
+            {displayStatus === 'running' || displayStatus === 'starting' ? <Text color="background">{displayStatusText}</Text> : displayStatus === 'completed' ? <Text color="success">{displayStatusText}</Text> : <Text color="error">{displayStatusText}</Text>}
           </Text>
           <Text>
-            <Text bold>Runtime</Text>:{' '}
+            <Text bold>耗时</Text>:{' '}
             {formatDuration((session.endTime ?? Date.now()) - session.startTime)}
           </Text>
           <Text wrap="truncate-end">
-            <Text bold>Title</Text>: {displayTitle}
+            <Text bold>标题</Text>: {displayTitle}
           </Text>
           <Text>
-            <Text bold>Progress</Text>:{' '}
+            <Text bold>进度</Text>:{' '}
             <RemoteSessionProgress session={session} />
           </Text>
           <Text>
-            <Text bold>Session URL</Text>:{' '}
+            <Text bold>会话地址</Text>:{' '}
             <Link url={getRemoteTaskSessionUrl(session.sessionId)}>
               <Text dimColor>{getRemoteTaskSessionUrl(session.sessionId)}</Text>
             </Link>

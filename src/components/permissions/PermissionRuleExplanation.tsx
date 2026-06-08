@@ -22,32 +22,38 @@ function stringsForDecisionReason(reason: PermissionDecisionReason | undefined, 
   if (!reason) {
     return null;
   }
+  const toolTypeLabel = {
+    tool: '工具调用',
+    command: '命令',
+    edit: '编辑',
+    read: '读取'
+  }[toolType];
   if ((feature('BASH_CLASSIFIER') || feature('TRANSCRIPT_CLASSIFIER')) && reason.type === 'classifier') {
     if (reason.classifier === 'auto-mode') {
       return {
-        reasonString: `Auto mode classifier requires confirmation for this ${toolType}.\n${reason.reason}`,
+        reasonString: `自动模式分类器要求确认本次${toolTypeLabel}。\n${reason.reason}`,
         configString: undefined,
         themeColor: 'error'
       };
     }
     return {
-      reasonString: `Classifier ${chalk.bold(reason.classifier)} requires confirmation for this ${toolType}.\n${reason.reason}`,
+      reasonString: `分类器 ${chalk.bold(reason.classifier)} 要求确认本次${toolTypeLabel}。\n${reason.reason}`,
       configString: undefined
     };
   }
   switch (reason.type) {
     case 'rule':
       return {
-        reasonString: `Permission rule ${chalk.bold(permissionRuleValueToString(reason.rule.ruleValue))} requires confirmation for this ${toolType}.`,
-        configString: reason.rule.source === 'policySettings' ? undefined : '/permissions to update rules'
+        reasonString: `权限规则 ${chalk.bold(permissionRuleValueToString(reason.rule.ruleValue))} 要求确认本次${toolTypeLabel}。`,
+        configString: reason.rule.source === 'policySettings' ? undefined : '使用 /permissions 更新规则'
       };
     case 'hook':
       {
         const hookReasonString = reason.reason ? `:\n${reason.reason}` : '.';
         const sourceLabel = reason.hookSource ? ` ${chalk.dim(`[${reason.hookSource}]`)}` : '';
         return {
-          reasonString: `Hook ${chalk.bold(reason.hookName)} requires confirmation for this ${toolType}${hookReasonString}${sourceLabel}`,
-          configString: '/hooks to update'
+          reasonString: `Hook ${chalk.bold(reason.hookName)} 要求确认本次${toolTypeLabel}${hookReasonString}${sourceLabel}`,
+          configString: '使用 /hooks 更新'
         };
       }
     case 'safetyCheck':
@@ -59,7 +65,7 @@ function stringsForDecisionReason(reason: PermissionDecisionReason | undefined, 
     case 'workingDir':
       return {
         reasonString: reason.reason,
-        configString: '/permissions to update rules'
+        configString: '使用 /permissions 更新规则'
       };
     default:
       return null;

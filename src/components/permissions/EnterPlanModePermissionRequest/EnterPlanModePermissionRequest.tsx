@@ -49,21 +49,21 @@ export function EnterPlanModePermissionRequest(t0) {
   const handleResponse = t1;
   let t2;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Text>SecAI wants to enter plan mode to explore and design an implementation approach.</Text>;
+    t2 = <Text>SecAI 想进入计划模式，先探索代码并设计实现方案。</Text>;
     $[5] = t2;
   } else {
     t2 = $[5];
   }
   let t3;
   if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = <Box marginTop={1} flexDirection="column"><Text dimColor={true}>In plan mode, SecAI will:</Text><Text dimColor={true}> · Explore the codebase thoroughly</Text><Text dimColor={true}> · Identify existing patterns</Text><Text dimColor={true}> · Design an implementation strategy</Text><Text dimColor={true}> · Present a plan for your approval</Text></Box>;
+    t3 = <Box marginTop={1} flexDirection="column"><Text dimColor={true}>计划模式下，SecAI 会：</Text><Text dimColor={true}> · 阅读并理解相关代码</Text><Text dimColor={true}> · 识别已有模式</Text><Text dimColor={true}> · 设计实现策略</Text><Text dimColor={true}> · 提交计划供你确认</Text></Box>;
     $[6] = t3;
   } else {
     t3 = $[6];
   }
   let t4;
   if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
-    t4 = <Box marginTop={1}><Text dimColor={true}>No code changes will be made until you approve the plan.</Text></Box>;
+    t4 = <Box marginTop={1}><Text dimColor={true}>在你批准计划前，不会修改代码。</Text></Box>;
     $[7] = t4;
   } else {
     t4 = $[7];
@@ -71,7 +71,7 @@ export function EnterPlanModePermissionRequest(t0) {
   let t5;
   if ($[8] === Symbol.for("react.memo_cache_sentinel")) {
     t5 = {
-      label: "Yes, enter plan mode",
+      label: "进入计划模式",
       value: "yes" as const
     };
     $[8] = t5;
@@ -81,7 +81,7 @@ export function EnterPlanModePermissionRequest(t0) {
   let t6;
   if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
     t6 = [t5, {
-      label: "No, start implementing now",
+      label: "现在开始实现",
       value: "no" as const
     }];
     $[9] = t6;
@@ -107,7 +107,7 @@ export function EnterPlanModePermissionRequest(t0) {
   }
   let t9;
   if ($[15] !== t8 || $[16] !== workerBadge) {
-    t9 = <PermissionDialog color="planMode" title="Enter plan mode?" workerBadge={workerBadge}>{t8}</PermissionDialog>;
+    t9 = <PermissionDialog color="planMode" title="进入计划模式？" workerBadge={workerBadge}>{t8}</PermissionDialog>;
     $[15] = t8;
     $[16] = workerBadge;
     $[17] = t9;

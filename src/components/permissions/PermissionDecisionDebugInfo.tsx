@@ -22,24 +22,24 @@ function decisionReasonDisplayString(decisionReason: PermissionDecisionReason & 
   type: Exclude<PermissionDecisionReason['type'], 'subcommandResults'>;
 }): string {
   if ((feature('BASH_CLASSIFIER') || feature('TRANSCRIPT_CLASSIFIER')) && decisionReason.type === 'classifier') {
-    return `${chalk.bold(decisionReason.classifier)} classifier: ${decisionReason.reason}`;
+    return `${chalk.bold(decisionReason.classifier)} 分类器：${decisionReason.reason}`;
   }
   switch (decisionReason.type) {
     case 'rule':
-      return `${chalk.bold(permissionRuleValueToString(decisionReason.rule.ruleValue))} rule from ${getSettingSourceDisplayNameLowercase(decisionReason.rule.source)}`;
+      return `${chalk.bold(permissionRuleValueToString(decisionReason.rule.ruleValue))} 规则，来源：${getSettingSourceDisplayNameLowercase(decisionReason.rule.source)}`;
     case 'mode':
-      return `${permissionModeTitle(decisionReason.mode)} mode`;
+      return `${permissionModeTitle(decisionReason.mode)} 模式`;
     case 'sandboxOverride':
-      return 'Requires permission to bypass sandbox';
+      return '需要权限以绕过沙箱';
     case 'workingDir':
       return decisionReason.reason;
     case 'safetyCheck':
     case 'other':
       return decisionReason.reason;
     case 'permissionPromptTool':
-      return `${chalk.bold(decisionReason.permissionPromptToolName)} permission prompt tool`;
+      return `${chalk.bold(decisionReason.permissionPromptToolName)} 权限提示工具`;
     case 'hook':
-      return decisionReason.reason ? `${chalk.bold(decisionReason.hookName)} hook: ${decisionReason.reason}` : `${chalk.bold(decisionReason.hookName)} hook`;
+      return decisionReason.reason ? `${chalk.bold(decisionReason.hookName)} hook：${decisionReason.reason}` : `${chalk.bold(decisionReason.hookName)} hook`;
     case 'asyncAgent':
       return decisionReason.reason;
     default:
@@ -132,7 +132,7 @@ function SuggestedRules(t0) {
       } else {
         t2 = $[8];
       }
-      t3 = "Suggested rules:";
+      t3 = "建议规则：";
       t4 = " ";
       T0 = Ansi;
       t1 = rules.map(_temp).join(", ");
@@ -216,7 +216,7 @@ function SuggestionDisplay(t0) {
   if (!suggestions || suggestions.length === 0) {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t1 = <Text dimColor={true}>Suggestions </Text>;
+      t1 = <Text dimColor={true}>建议 </Text>;
       $[0] = t1;
     } else {
       t1 = $[0];
@@ -231,7 +231,7 @@ function SuggestionDisplay(t0) {
     }
     let t3;
     if ($[3] === Symbol.for("react.memo_cache_sentinel")) {
-      t3 = <Text>None</Text>;
+      t3 = <Text>无</Text>;
       $[3] = t3;
     } else {
       t3 = $[3];
@@ -257,7 +257,7 @@ function SuggestionDisplay(t0) {
       if (rules.length === 0 && directories.length === 0 && !mode) {
         let t3;
         if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
-          t3 = <Text dimColor={true}>Suggestion </Text>;
+          t3 = <Text dimColor={true}>建议 </Text>;
           $[10] = t3;
         } else {
           t3 = $[10];
@@ -272,7 +272,7 @@ function SuggestionDisplay(t0) {
         }
         let t5;
         if ($[13] === Symbol.for("react.memo_cache_sentinel")) {
-          t5 = <Text>None</Text>;
+          t5 = <Text>无</Text>;
           $[13] = t5;
         } else {
           t5 = $[13];
@@ -290,7 +290,7 @@ function SuggestionDisplay(t0) {
       }
       let t3;
       if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-        t3 = <Text dimColor={true}>Suggestions </Text>;
+        t3 = <Text dimColor={true}>建议 </Text>;
         $[16] = t3;
       } else {
         t3 = $[16];
@@ -318,7 +318,7 @@ function SuggestionDisplay(t0) {
       } else {
         t6 = $[21];
       }
-      t1 = <Box flexDirection="column">{t6}{rules.length > 0 && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={width}><Text dimColor={true}> Rules </Text></Box><Box flexDirection="column">{rules.map(_temp2)}</Box></Box>}{directories.length > 0 && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={width}><Text dimColor={true}> Directories </Text></Box><Box flexDirection="column">{directories.map(_temp3)}</Box></Box>}{mode && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={width}><Text dimColor={true}> Mode </Text></Box><Text>{permissionModeTitle(mode)}</Text></Box>}</Box>;
+      t1 = <Box flexDirection="column">{t6}{rules.length > 0 && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={width}><Text dimColor={true}> 规则 </Text></Box><Box flexDirection="column">{rules.map(_temp2)}</Box></Box>}{directories.length > 0 && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={width}><Text dimColor={true}> 目录 </Text></Box><Box flexDirection="column">{directories.map(_temp3)}</Box></Box>}{mode && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={width}><Text dimColor={true}> 模式 </Text></Box><Text>{permissionModeTitle(mode)}</Text></Box>}</Box>;
     }
     $[6] = suggestions;
     $[7] = width;
@@ -384,7 +384,7 @@ export function PermissionDecisionDebugInfo(t0) {
   const unreachableRules = t1;
   let t2;
   if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Box justifyContent="flex-end" minWidth={10}><Text dimColor={true}>Behavior </Text></Box>;
+    t2 = <Box justifyContent="flex-end" minWidth={10}><Text dimColor={true}>行为 </Text></Box>;
     $[6] = t2;
   } else {
     t2 = $[6];
@@ -399,7 +399,7 @@ export function PermissionDecisionDebugInfo(t0) {
   }
   let t4;
   if ($[9] !== permissionResult.behavior || $[10] !== permissionResult.message) {
-    t4 = permissionResult.behavior !== "allow" && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={10}><Text dimColor={true}>Message </Text></Box><Text>{permissionResult.message}</Text></Box>;
+    t4 = permissionResult.behavior !== "allow" && <Box flexDirection="row"><Box justifyContent="flex-end" minWidth={10}><Text dimColor={true}>消息 </Text></Box><Text>{permissionResult.message}</Text></Box>;
     $[9] = permissionResult.behavior;
     $[10] = permissionResult.message;
     $[11] = t4;
@@ -408,14 +408,14 @@ export function PermissionDecisionDebugInfo(t0) {
   }
   let t5;
   if ($[12] === Symbol.for("react.memo_cache_sentinel")) {
-    t5 = <Box justifyContent="flex-end" minWidth={10}><Text dimColor={true}>Reason </Text></Box>;
+    t5 = <Box justifyContent="flex-end" minWidth={10}><Text dimColor={true}>原因 </Text></Box>;
     $[12] = t5;
   } else {
     t5 = $[12];
   }
   let t6;
   if ($[13] !== decisionReason) {
-    t6 = <Box flexDirection="row">{t5}{decisionReason === undefined ? <Text>undefined</Text> : <PermissionDecisionInfoItem decisionReason={decisionReason} />}</Box>;
+    t6 = <Box flexDirection="row">{t5}{decisionReason === undefined ? <Text>未定义</Text> : <PermissionDecisionInfoItem decisionReason={decisionReason} />}</Box>;
     $[13] = decisionReason;
     $[14] = t6;
   } else {
@@ -431,7 +431,7 @@ export function PermissionDecisionDebugInfo(t0) {
   }
   let t8;
   if ($[17] !== unreachableRules) {
-    t8 = unreachableRules.length > 0 && <Box flexDirection="column" marginTop={1}><Text color="warning">{figures.warning} Unreachable Rules ({unreachableRules.length})</Text>{unreachableRules.map(_temp5)}</Box>;
+    t8 = unreachableRules.length > 0 && <Box flexDirection="column" marginTop={1}><Text color="warning">{figures.warning} 不可达规则 ({unreachableRules.length})</Text>{unreachableRules.map(_temp5)}</Box>;
     $[17] = unreachableRules;
     $[18] = t8;
   } else {
@@ -452,7 +452,7 @@ export function PermissionDecisionDebugInfo(t0) {
   return t9;
 }
 function _temp5(u_1, i) {
-  return <Box key={i} flexDirection="column" marginLeft={2}><Text color="warning">{permissionRuleValueToString(u_1.rule.ruleValue)}</Text><Text dimColor={true}>{"  "}{u_1.reason}</Text><Text dimColor={true}>{"  "}Fix: {u_1.fix}</Text></Box>;
+  return <Box key={i} flexDirection="column" marginLeft={2}><Text color="warning">{permissionRuleValueToString(u_1.rule.ruleValue)}</Text><Text dimColor={true}>{"  "}{u_1.reason}</Text><Text dimColor={true}>{"  "}修复：{u_1.fix}</Text></Box>;
 }
 function _temp4(s) {
   return s.toolPermissionContext;

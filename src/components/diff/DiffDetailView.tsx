@@ -116,14 +116,14 @@ export function DiffDetailView(t0) {
     }
     let t6;
     if ($[13] === Symbol.for("react.memo_cache_sentinel")) {
-      t6 = <Text dimColor={true} italic={true}>New file not yet staged.</Text>;
+      t6 = <Text dimColor={true} italic={true}>新文件尚未暂存。</Text>;
       $[13] = t6;
     } else {
       t6 = $[13];
     }
     let t7;
     if ($[14] !== filePath) {
-      t7 = <Box flexDirection="column">{t6}<Text dimColor={true} italic={true}>Run `git add {filePath}` to see line counts.</Text></Box>;
+      t7 = <Box flexDirection="column">{t6}<Text dimColor={true} italic={true}>运行 `git add {filePath}` 后可查看行数统计。</Text></Box>;
       $[14] = filePath;
       $[15] = t7;
     } else {

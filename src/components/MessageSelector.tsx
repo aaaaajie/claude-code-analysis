@@ -93,20 +93,20 @@ export function MessageSelector({
   function getRestoreOptions(canRestoreCode: boolean): OptionWithDescription<RestoreOption>[] {
     const baseOptions: OptionWithDescription<RestoreOption>[] = canRestoreCode ? [{
       value: 'both',
-      label: 'Restore code and conversation'
+      label: '恢复代码和对话'
     }, {
       value: 'conversation',
-      label: 'Restore conversation'
+      label: '仅恢复对话'
     }, {
       value: 'code',
-      label: 'Restore code'
+      label: '仅恢复代码'
     }] : [{
       value: 'conversation',
-      label: 'Restore conversation'
+      label: '恢复对话'
     }];
     const summarizeInputProps = {
       type: 'input' as const,
-      placeholder: 'add context (optional)',
+      placeholder: '补充上下文（可选）',
       initialValue: '',
       allowEmptySubmitToCancel: true,
       showLabelWithValue: true,
@@ -114,21 +114,21 @@ export function MessageSelector({
     };
     baseOptions.push({
       value: 'summarize',
-      label: 'Summarize from here',
+      label: '从这里开始总结',
       ...summarizeInputProps,
       onChange: setSummarizeFromFeedback
     });
     if ("external" === 'ant') {
       baseOptions.push({
         value: 'summarize_up_to',
-        label: 'Summarize up to here',
+        label: '总结到这里',
         ...summarizeInputProps,
         onChange: setSummarizeUpToFeedback
       });
     }
     baseOptions.push({
       value: 'nevermind',
-      label: 'Never mind'
+      label: '取消'
     });
     return baseOptions;
   }
@@ -149,7 +149,7 @@ export function MessageSelector({
     } catch (error_0) {
       logError(error_0 as Error);
       setIsRestoring(false);
-      setError(`Failed to restore the conversation:\n${error_0}`);
+      setError(`恢复对话失败：\n${error_0}`);
     }
   }
   async function handleSelect(message_0: UserMessage) {
@@ -179,7 +179,7 @@ export function MessageSelector({
       option: option as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
     });
     if (!messageToRestore) {
-      setError('Message not found.');
+      setError('未找到消息。');
       return;
     }
     if (option === 'nevermind') {
@@ -204,7 +204,7 @@ export function MessageSelector({
         setIsRestoring(false);
         setRestoringOption(null);
         setMessageToRestore(undefined);
-        setError(`Failed to summarize:\n${error_1}`);
+        setError(`总结失败：\n${error_1}`);
       }
       return;
     }
@@ -234,11 +234,11 @@ export function MessageSelector({
 
     // Handle errors
     if (conversationError && codeError) {
-      setError(`Failed to restore the conversation and code:\n${conversationError}\n${codeError}`);
+      setError(`恢复对话和代码失败：\n${conversationError}\n${codeError}`);
     } else if (conversationError) {
-      setError(`Failed to restore the conversation:\n${conversationError}`);
+      setError(`恢复对话失败：\n${conversationError}`);
     } else if (codeError) {
-      setError(`Failed to restore the code:\n${codeError}`);
+      setError(`恢复代码失败：\n${codeError}`);
     } else {
       // Success - close the selector
       onClose();
@@ -316,20 +316,18 @@ export function MessageSelector({
       <Divider color="suggestion" />
       <Box flexDirection="column" marginX={1} gap={1}>
         <Text bold color="suggestion">
-          Rewind
+          回退
         </Text>
 
         {error && <>
-            <Text color="error">Error: {error}</Text>
+            <Text color="error">错误：{error}</Text>
           </>}
         {!hasMessagesToSelect && <>
-            <Text>Nothing to rewind to yet.</Text>
+            <Text>暂无可回退的位置。</Text>
           </>}
         {!error && messageToRestore && hasMessagesToSelect && <>
             <Text>
-              Confirm you want to restore{' '}
-              {!diffStatsForRestore && 'the conversation '}to the point before
-              you sent this message:
+              确认要将{diffStatsForRestore ? '代码和/或对话' : '对话'}恢复到发送这条消息之前：
             </Text>
             <Box flexDirection="column" paddingLeft={1} borderStyle="single" borderRight={false} borderTop={false} borderBottom={false} borderLeft={true} borderLeftDimColor>
               <UserMessageOption userMessage={messageToRestore} color="text" isCurrent={false} />
@@ -340,20 +338,19 @@ export function MessageSelector({
             <RestoreOptionDescription selectedRestoreOption={selectedRestoreOption} canRestoreCode={!!canRestoreCode_0} diffStatsForRestore={diffStatsForRestore} />
             {isRestoring && isSummarizeOption(restoringOption) ? <Box flexDirection="row" gap={1}>
                 <Spinner />
-                <Text>Summarizing…</Text>
+                <Text>正在总结…</Text>
               </Box> : <Select isDisabled={isRestoring} options={getRestoreOptions(!!canRestoreCode_0)} defaultFocusValue={canRestoreCode_0 ? 'both' : 'conversation'} onFocus={value => setSelectedRestoreOption(value as RestoreOption)} onChange={value_0 => onSelectRestoreOption(value_0 as RestoreOption)} onCancel={() => preselectedMessage ? onClose() : setMessageToRestore(undefined)} />}
             {canRestoreCode_0 && <Box marginBottom={1}>
                 <Text dimColor>
-                  {figures.warning} Rewinding does not affect files edited
-                  manually or via bash.
+                  {figures.warning} 回退不会影响手动编辑或通过 Bash 修改的文件。
                 </Text>
               </Box>}
           </>}
         {showPickList && <>
             {isFileHistoryEnabled ? <Text>
-                Restore the code and/or conversation to the point before…
+                选择要回退到哪条消息之前…
               </Text> : <Text>
-                Restore and fork the conversation to the point before…
+                选择要恢复并分叉到哪条消息之前…
               </Text>}
             <Box width="100%" flexDirection="column">
               {messageOptions.slice(firstVisibleIndex, firstVisibleIndex + MAX_VISIBLE_MESSAGES).map((msg, visibleOptionIndex) => {
@@ -377,12 +374,12 @@ export function MessageSelector({
                             {metadata ? <>
                                 <Text dimColor={!isSelected} color="inactive">
                                   {numFilesChanged ? <>
-                                      {numFilesChanged === 1 && metadata.filesChanged![0] ? `${path.basename(metadata.filesChanged![0])} ` : `${numFilesChanged} files changed `}
+                                      {numFilesChanged === 1 && metadata.filesChanged![0] ? `${path.basename(metadata.filesChanged![0])} ` : `${numFilesChanged} 个文件变更 `}
                                       <DiffStatsText diffStats={metadata} />
-                                    </> : <>No code changes</>}
+                                    </> : <>无代码变更</>}
                                 </Text>
                               </> : <Text dimColor color="warning">
-                                {figures.warning} No code restore
+                                {figures.warning} 无法恢复代码
                               </Text>}
                           </Box>}
                       </Box>
@@ -391,9 +388,8 @@ export function MessageSelector({
             </Box>
           </>}
         {!messageToRestore && <Text dimColor italic>
-            {exitState.pending ? <>Press {exitState.keyName} again to exit</> : <>
-                {!error && hasMessagesToSelect && 'Enter to continue · '}Esc to
-                exit
+            {exitState.pending ? <>再按一次 {exitState.keyName} 退出</> : <>
+                {!error && hasMessagesToSelect && 'Enter 继续 · '}Esc 退出
               </>}
           </Text>}
       </Box>
@@ -402,15 +398,15 @@ export function MessageSelector({
 function getRestoreOptionConversationText(option: RestoreOption): string {
   switch (option) {
     case 'summarize':
-      return 'Messages after this point will be summarized.';
+      return '此位置之后的消息会被总结。';
     case 'summarize_up_to':
-      return 'Preceding messages will be summarized. This and subsequent messages will remain unchanged — you will stay at the end of the conversation.';
+      return '此位置之前的消息会被总结；当前消息及之后内容保持不变，并停留在对话末尾。';
     case 'both':
     case 'conversation':
-      return 'The conversation will be forked.';
+      return '对话会从这里分叉。';
     case 'code':
     case 'nevermind':
-      return 'The conversation will be unchanged.';
+      return '对话不会改变。';
   }
 }
 function RestoreOptionDescription(t0) {
@@ -439,7 +435,7 @@ function RestoreOptionDescription(t0) {
   }
   let t3;
   if ($[4] !== diffStatsForRestore || $[5] !== selectedRestoreOption || $[6] !== showCodeRestore) {
-    t3 = !isSummarizeOption(selectedRestoreOption) && (showCodeRestore ? <RestoreCodeConfirmation diffStatsForRestore={diffStatsForRestore} /> : <Text dimColor={true}>The code will be unchanged.</Text>);
+    t3 = !isSummarizeOption(selectedRestoreOption) && (showCodeRestore ? <RestoreCodeConfirmation diffStatsForRestore={diffStatsForRestore} /> : <Text dimColor={true}>代码不会改变。</Text>);
     $[4] = diffStatsForRestore;
     $[5] = selectedRestoreOption;
     $[6] = showCodeRestore;
@@ -469,7 +465,7 @@ function RestoreCodeConfirmation(t0) {
   if (!diffStatsForRestore.filesChanged || !diffStatsForRestore.filesChanged[0]) {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t1 = <Text dimColor={true}>The code has not changed (nothing will be restored).</Text>;
+      t1 = <Text dimColor={true}>代码没有变更，无需恢复。</Text>;
       $[0] = t1;
     } else {
       t1 = $[0];
@@ -508,7 +504,7 @@ function RestoreCodeConfirmation(t0) {
         t2 = $[6];
       }
       const file2 = t2;
-      fileLabel = `${file1} and ${file2}`;
+      fileLabel = `${file1} 和 ${file2}`;
     } else {
       let t1;
       if ($[7] !== diffStatsForRestore.filesChanged[0]) {
@@ -519,7 +515,7 @@ function RestoreCodeConfirmation(t0) {
         t1 = $[8];
       }
       const file1_0 = t1;
-      fileLabel = `${file1_0} and ${diffStatsForRestore.filesChanged.length - 1} other files`;
+      fileLabel = `${file1_0} 等 ${diffStatsForRestore.filesChanged.length} 个文件`;
     }
   }
   let t1;
@@ -532,7 +528,7 @@ function RestoreCodeConfirmation(t0) {
   }
   let t2;
   if ($[11] !== fileLabel || $[12] !== t1) {
-    t2 = <><Text dimColor={true}>The code will be restored{" "}{t1} in {fileLabel}.</Text></>;
+    t2 = <><Text dimColor={true}>代码将恢复 {t1}，涉及 {fileLabel}。</Text></>;
     $[11] = fileLabel;
     $[12] = t1;
     $[13] = t2;
@@ -591,7 +587,7 @@ function UserMessageOption(t0) {
   if (isCurrent) {
     let t1;
     if ($[0] !== color || $[1] !== dimColor) {
-      t1 = <Box width="100%"><Text italic={true} color={color} dimColor={dimColor}>(current)</Text></Box>;
+      t1 = <Box width="100%"><Text italic={true} color={color} dimColor={dimColor}>（当前）</Text></Box>;
       $[0] = color;
       $[1] = dimColor;
       $[2] = t1;
@@ -613,12 +609,12 @@ function UserMessageOption(t0) {
   if ($[3] !== color || $[4] !== columns || $[5] !== content || $[6] !== dimColor || $[7] !== lastBlock || $[8] !== paddingRight) {
     t6 = Symbol.for("react.early_return_sentinel");
     bb0: {
-      const rawMessageText = typeof content === "string" ? content.trim() : lastBlock && isTextBlock(lastBlock) ? lastBlock.text.trim() : "(no prompt)";
+      const rawMessageText = typeof content === "string" ? content.trim() : lastBlock && isTextBlock(lastBlock) ? lastBlock.text.trim() : "（无输入）";
       const messageText = stripDisplayTags(rawMessageText);
       if (isEmptyMessageText(messageText)) {
         let t7;
         if ($[17] !== color || $[18] !== dimColor) {
-          t7 = <Box flexDirection="row" width="100%"><Text italic={true} color={color} dimColor={dimColor}>((empty message))</Text></Box>;
+          t7 = <Box flexDirection="row" width="100%"><Text italic={true} color={color} dimColor={dimColor}>（空消息）</Text></Box>;
           $[17] = color;
           $[18] = dimColor;
           $[19] = t7;

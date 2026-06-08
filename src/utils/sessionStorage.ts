@@ -4602,6 +4602,8 @@ type LiteMetadata = {
   customTitle?: string
   summary?: string
   tag?: string
+  agentName?: string
+  agentColor?: string
   agentSetting?: string
   prNumber?: number
   prUrl?: string
@@ -4797,6 +4799,12 @@ async function readLiteMetadata(
     extractLastJsonStringField(head, 'aiTitle')
   const summary = extractLastJsonStringField(tail, 'summary')
   const tag = extractLastJsonStringField(tail, 'tag')
+  const agentName =
+    extractLastJsonStringField(tail, 'agentName') ??
+    extractLastJsonStringField(head, 'agentName')
+  const agentColor =
+    extractLastJsonStringField(tail, 'agentColor') ??
+    extractLastJsonStringField(head, 'agentColor')
   const gitBranch =
     extractLastJsonStringField(tail, 'gitBranch') ??
     extractJsonStringField(head, 'gitBranch')
@@ -4828,6 +4836,8 @@ async function readLiteMetadata(
     customTitle,
     summary,
     tag,
+    agentName,
+    agentColor,
     agentSetting,
     prNumber,
     prUrl,
@@ -5065,6 +5075,8 @@ async function enrichLog(
     customTitle: meta.customTitle,
     summary: meta.summary,
     tag: meta.tag,
+    agentName: meta.agentName,
+    agentColor: meta.agentColor,
     agentSetting: meta.agentSetting,
     prNumber: meta.prNumber,
     prUrl: meta.prUrl,

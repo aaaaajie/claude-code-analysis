@@ -7,7 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const srcRoot = join(root, 'src')
 
 const macro = {
-  VERSION: '1.0.9',
+  VERSION: '1.1.0',
   BUILD_TIME: new Date().toISOString(),
   ISSUES_EXPLAINER: 'contact SecAI support',
   FEEDBACK_CHANNEL: 'SecAI support',

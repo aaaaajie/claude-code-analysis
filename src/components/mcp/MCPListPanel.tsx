@@ -186,7 +186,7 @@ export function MCPListPanel(t0) {
   let t7;
   if ($[14] !== onComplete) {
     t7 = () => {
-      onComplete("MCP dialog dismissed", {
+      onComplete("已关闭 MCP 管理面板", {
         display: "system"
       });
     };
@@ -387,7 +387,7 @@ export function MCPListPanel(t0) {
   }
   let t23;
   if ($[51] !== claudeAiServers || $[52] !== renderServerItem) {
-    t23 = claudeAiServers.length > 0 && <Box flexDirection="column" marginBottom={1}><Box paddingLeft={2}><Text bold={true}>claude.ai</Text></Box>{claudeAiServers.map(server_5 => renderServerItem(server_5))}</Box>;
+    t23 = claudeAiServers.length > 0 && <Box flexDirection="column" marginBottom={1}><Box paddingLeft={2}><Text bold={true}>SecAI 连接器</Text></Box>{claudeAiServers.map(server_5 => renderServerItem(server_5))}</Box>;
     $[51] = claudeAiServers;
     $[52] = renderServerItem;
     $[53] = t23;

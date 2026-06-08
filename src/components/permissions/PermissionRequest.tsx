@@ -128,18 +128,18 @@ export type ToolUseConfirm<Input extends AnyObject = AnyObject> = {
 function getNotificationMessage(toolUseConfirm: ToolUseConfirm): string {
   const toolName = toolUseConfirm.tool.userFacingName(toolUseConfirm.input as never);
   if (toolUseConfirm.tool === ExitPlanModeV2Tool) {
-    return 'SecAI needs your approval for the plan';
+    return 'SecAI 需要你批准计划';
   }
   if (toolUseConfirm.tool === EnterPlanModeTool) {
-    return 'SecAI wants to enter plan mode';
+    return 'SecAI 想进入计划模式';
   }
   if (feature('REVIEW_ARTIFACT') && toolUseConfirm.tool === ReviewArtifactTool) {
-    return 'SecAI needs your approval for a review artifact';
+    return 'SecAI 需要你批准审查产物';
   }
   if (!toolName || toolName.trim() === '') {
-    return 'SecAI needs your attention';
+    return 'SecAI 需要你处理';
   }
-  return `SecAI needs your permission to use ${toolName}`;
+  return `SecAI 需要权限使用 ${toolName}`;
 }
 
 // TODO: Move this to Tool.renderPermissionRequest

@@ -1,7 +1,7 @@
 import { c as _c } from "react/compiler-runtime";
 import React, { useCallback } from 'react';
 import { logEvent } from 'src/services/analytics/index.js';
-import { Box, Link, Text } from '../ink.js';
+import { Box, Text } from '../ink.js';
 import type { ExternalClaudeMdInclude } from '../utils/claudemd.js';
 import { saveCurrentProjectConfig } from '../utils/config.js';
 import { Select } from './CustomSelect/index.js';
@@ -59,14 +59,14 @@ export function ClaudeMdExternalIncludesDialog(t0) {
   const t5 = !isStandaloneDialog;
   let t6;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Text>This project's AGENTS.md imports files outside the current working directory. Never allow this for third-party repositories.</Text>;
+    t6 = <Text>当前项目的 AGENTS.md 引用了工作目录之外的文件。处理第三方仓库时请谨慎允许。</Text>;
     $[5] = t6;
   } else {
     t6 = $[5];
   }
   let t7;
   if ($[6] !== externalIncludes) {
-    t7 = externalIncludes && externalIncludes.length > 0 && <Box flexDirection="column"><Text dimColor={true}>External imports:</Text>{externalIncludes.map(_temp4)}</Box>;
+    t7 = externalIncludes && externalIncludes.length > 0 && <Box flexDirection="column"><Text dimColor={true}>外部引用：</Text>{externalIncludes.map(_temp4)}</Box>;
     $[6] = externalIncludes;
     $[7] = t7;
   } else {
@@ -74,7 +74,7 @@ export function ClaudeMdExternalIncludesDialog(t0) {
   }
   let t8;
   if ($[8] === Symbol.for("react.memo_cache_sentinel")) {
-    t8 = <Text dimColor={true}>Important: Only use SecAI with files you trust. Accessing untrusted files may pose security risks{" "}<Link url="https://code.secai.com/docs/en/security" />{" "}</Text>;
+    t8 = <Text dimColor={true}>请只允许你信任的外部文件。不了解来源时建议拒绝。</Text>;
     $[8] = t8;
   } else {
     t8 = $[8];
@@ -82,10 +82,10 @@ export function ClaudeMdExternalIncludesDialog(t0) {
   let t9;
   if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
     t9 = [{
-      label: "Yes, allow external imports",
+      label: "允许外部引用",
       value: "yes"
     }, {
-      label: "No, disable external imports",
+      label: "不允许外部引用",
       value: "no"
     }];
     $[9] = t9;

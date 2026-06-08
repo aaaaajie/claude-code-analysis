@@ -17,7 +17,7 @@ import { formatLogMetadata, truncateToWidth } from '../utils/format.js';
 import { getWorktreePaths } from '../utils/getWorktreePaths.js';
 import { getBranch } from '../utils/git.js';
 import { getLogDisplayTitle } from '../utils/log.js';
-import { getFirstMeaningfulUserMessageTextContent, getSessionIdFromLog, isCustomTitleEnabled, markSessionDeleted, saveCustomTitle } from '../utils/sessionStorage.js';
+import { getFirstMeaningfulUserMessageTextContent, getSessionIdFromLog, isCustomTitleEnabled, markSessionDeleted, saveAgentName, saveCustomTitle } from '../utils/sessionStorage.js';
 import { getTheme } from '../utils/theme.js';
 import { ConfigurableShortcutHint } from './ConfigurableShortcutHint.js';
 import { Select } from './CustomSelect/select.js';
@@ -743,8 +743,10 @@ export function LogSelector(t0) {
         setRenameValue("");
         return;
       }
-      if (renameValue.trim()) {
-        await saveCustomTitle(sessionId_1, renameValue.trim(), focusedLog.fullPath);
+      const nextName = renameValue.trim();
+      if (nextName) {
+        await saveCustomTitle(sessionId_1, nextName, focusedLog.fullPath);
+        await saveAgentName(sessionId_1, nextName, focusedLog.fullPath);
         if (isResumeWithRenameEnabled && onLogsChanged) {
           onLogsChanged();
         }

@@ -163,7 +163,7 @@ export function ExitPlanModePermissionRequest({
       type: 'image',
       content: base64Image,
       mediaType: mediaType || 'image/png',
-      filename: filename || 'Pasted image',
+      filename: filename || '粘贴的图片',
       dimensions
     };
     cacheImagePath(newContent);
@@ -208,7 +208,7 @@ export function ExitPlanModePermissionRequest({
   const [currentPlan, setCurrentPlan] = useState(() => {
     if (inputPlan) return inputPlan;
     const plan = getPlan();
-    return plan ?? 'No plan found. Please write your plan to the plan file first.';
+    return plan ?? '未找到计划。请先将计划写入计划文件。';
   });
   const [showSaveMessage, setShowSaveMessage] = useState(false);
   // Track Ctrl+G local edits so updatedInput can include the plan (the tool
@@ -287,7 +287,7 @@ export function ExitPlanModePermissionRequest({
       });
       onDone();
       onReject();
-      toolUseConfirm.onReject('Plan being refined via Ultraplan — please wait for the result.');
+      toolUseConfirm.onReject('计划正在通过 Ultraplan 继续完善，请等待结果。');
       void launchUltraplan({
         blurb: '',
         seedPlan: currentPlan,
@@ -545,7 +545,7 @@ export function ExitPlanModePermissionRequest({
             {isV2 && planFilePath && <Text dimColor> · {getDisplayPath(planFilePath)}</Text>}
             {showSaveMessage && <>
                 <Text dimColor>{' · '}</Text>
-                <Text color="success">{figures.tick}Plan saved!</Text>
+                <Text color="success">{figures.tick}计划已保存！</Text>
               </>}
           </Box>}
       </Box>);
@@ -598,15 +598,15 @@ export function ExitPlanModePermissionRequest({
         toolUseConfirm.onReject();
       }
     }
-    return <PermissionDialog color="planMode" title="Exit plan mode?" workerBadge={workerBadge}>
+    return <PermissionDialog color="planMode" title="退出计划模式？" workerBadge={workerBadge}>
         <Box flexDirection="column" paddingX={1} marginTop={1}>
-          <Text>SecAI wants to exit plan mode</Text>
+          <Text>SecAI 想要退出计划模式</Text>
           <Box marginTop={1}>
             <Select options={[{
-            label: 'Yes',
+            label: '是',
             value: 'yes' as const
           }, {
-            label: 'No',
+            label: '否',
             value: 'no' as const
           }]} onChange={handleEmptyPlanResponse} onCancel={() => {
             logEvent('tengu_plan_exit', {
@@ -624,10 +624,10 @@ export function ExitPlanModePermissionRequest({
       </PermissionDialog>;
   }
   return <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
-      <PermissionDialog color="planMode" title="Ready to code?" innerPaddingX={0} workerBadge={workerBadge}>
+      <PermissionDialog color="planMode" title="准备开始执行？" innerPaddingX={0} workerBadge={workerBadge}>
         <Box flexDirection="column" marginTop={1}>
           <Box paddingX={1} flexDirection="column">
-            <Text>Here is SecAI&apos;s plan:</Text>
+            <Text>这是 SecAI 的计划：</Text>
           </Box>
           <Box borderColor="subtle" borderStyle="dashed" flexDirection="column" borderLeft={false} borderRight={false} paddingX={1} marginBottom={1}
         // Necessary for Windows Terminal to render properly
@@ -637,15 +637,14 @@ export function ExitPlanModePermissionRequest({
           <Box flexDirection="column" paddingX={1}>
             <PermissionRuleExplanation permissionResult={toolUseConfirm.permissionResult} toolType="tool" />
             {isClassifierPermissionsEnabled() && allowedPrompts && allowedPrompts.length > 0 && <Box flexDirection="column" marginBottom={1}>
-                  <Text bold>Requested permissions:</Text>
+                  <Text bold>请求的权限：</Text>
                   {allowedPrompts.map((p, i) => <Text key={i} dimColor>
                       {'  '}· {p.tool}({PROMPT_PREFIX} {p.prompt})
                     </Text>)}
                 </Box>}
             {!useStickyFooter && <>
                 <Text dimColor>
-                  SecAI has written up a plan and is ready to execute. Would
-                  you like to proceed?
+                  SecAI 已经写好计划，准备开始执行。是否继续？
                 </Text>
                 <Box marginTop={1}>
                   <Select options={options} onChange={handleResponse} onCancel={() => handleCancelRef.current?.()} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} />
@@ -664,7 +663,7 @@ export function ExitPlanModePermissionRequest({
           </Box>
           {showSaveMessage && <Box>
               <Text dimColor>{' · '}</Text>
-              <Text color="success">{figures.tick}Plan saved!</Text>
+              <Text color="success">{figures.tick}计划已保存！</Text>
             </Box>}
         </Box>}
     </Box>;
@@ -725,7 +724,7 @@ export function buildPlanApprovalOptions({
     });
   }
   options.push({
-    label: 'Yes, manually approve edits',
+    label: '是，手动确认编辑',
     value: 'yes-default-keep-context'
   });
   if (showUltraplan) {
@@ -736,7 +735,7 @@ export function buildPlanApprovalOptions({
   }
   options.push({
     type: 'input',
-    label: 'No, keep planning',
+    label: '否，继续规划',
     value: 'no',
     placeholder: '告诉 SecAI 要修改什么',
     description: '按 shift+tab 使用这条反馈批准',

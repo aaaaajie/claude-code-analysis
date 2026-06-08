@@ -5,7 +5,6 @@ import { extractMcpToolDisplayName, getMcpDisplayName } from '../../services/mcp
 import { filterToolsByServer } from '../../services/mcp/utils.js';
 import { useAppState } from '../../state/AppState.js';
 import type { Tool } from '../../Tool.js';
-import { plural } from '../../utils/stringUtils.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Select } from '../CustomSelect/index.js';
 import { Byline } from '../design-system/Byline.js';
@@ -63,13 +62,13 @@ export function MCPToolListView(t0) {
         const isOpenWorld = tool.isOpenWorld?.({}) ?? false;
         const annotations = [];
         if (isReadOnly) {
-          annotations.push("read-only");
+          annotations.push("只读");
         }
         if (isDestructive) {
-          annotations.push("destructive");
+          annotations.push("会修改");
         }
         if (isOpenWorld) {
-          annotations.push("open-world");
+          annotations.push("外部访问");
         }
         return {
           label: displayName,
@@ -91,11 +90,11 @@ export function MCPToolListView(t0) {
     t2 = $[6];
   }
   const toolOptions = t2;
-  const t3 = `Tools for ${server.name}`;
+  const t3 = `${server.name} 的工具`;
   const t4 = serverTools.length;
   let t5;
   if ($[9] !== serverTools.length) {
-    t5 = plural(serverTools.length, "tool");
+    t5 = "个工具";
     $[9] = serverTools.length;
     $[10] = t5;
   } else {
@@ -104,7 +103,7 @@ export function MCPToolListView(t0) {
   const t6 = `${t4} ${t5}`;
   let t7;
   if ($[11] !== onBack || $[12] !== onSelectTool || $[13] !== serverTools || $[14] !== toolOptions) {
-    t7 = serverTools.length === 0 ? <Text dimColor={true}>No tools available</Text> : <Select options={toolOptions} onChange={value => {
+    t7 = serverTools.length === 0 ? <Text dimColor={true}>暂无可用工具</Text> : <Select options={toolOptions} onChange={value => {
       const index_0 = parseInt(value);
       const tool_0 = serverTools[index_0];
       if (tool_0) {
@@ -133,7 +132,7 @@ export function MCPToolListView(t0) {
   return t8;
 }
 function _temp2(exitState) {
-  return exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline><KeyboardShortcutHint shortcut={"\u2191\u2193"} action="navigate" /><KeyboardShortcutHint shortcut="Enter" action="select" /><ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="back" /></Byline>;
+  return exitState.pending ? <Text>再按一次 {exitState.keyName} 退出</Text> : <Byline><KeyboardShortcutHint shortcut={"\u2191\u2193"} action="导航" /><KeyboardShortcutHint shortcut="Enter" action="选择" /><ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="返回" /></Byline>;
 }
 function _temp(s) {
   return s.mcp.tools;

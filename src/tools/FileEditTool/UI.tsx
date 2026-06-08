@@ -29,19 +29,19 @@ export function userFacingName(input: Partial<{
   edits: unknown[];
 }> | undefined): string {
   if (!input) {
-    return 'Update';
+    return '更新';
   }
   if (input.file_path?.startsWith(getPlansDirectory())) {
-    return 'Updated plan';
+    return '更新计划';
   }
   // Hashline edits always modify an existing file (line-ref based)
   if (input.edits != null) {
-    return 'Update';
+    return '更新';
   }
   if (input.old_string === '') {
-    return 'Create';
+    return '创建';
   }
-  return 'Update';
+  return '更新';
 }
 export function getToolUseSummary(input: Partial<{
   file_path: string;
@@ -87,7 +87,7 @@ export function renderToolResultMessage({
 }): React.ReactNode {
   // For plan files, show /plan hint above the diff
   const isPlanFile = filePath.startsWith(getPlansDirectory());
-  return <FileEditToolUpdatedMessage filePath={filePath} structuredPatch={structuredPatch} firstLine={originalFile.split('\n')[0] ?? null} fileContent={originalFile} style={style} verbose={verbose} previewHint={isPlanFile ? '/plan to preview' : undefined} />;
+  return <FileEditToolUpdatedMessage filePath={filePath} structuredPatch={structuredPatch} firstLine={originalFile.split('\n')[0] ?? null} fileContent={originalFile} style={style} verbose={verbose} previewHint={isPlanFile ? '输入 /plan 预览' : undefined} />;
 }
 export function renderToolUseRejectedMessage(input: {
   file_path: string;
@@ -138,16 +138,16 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
     // Show a less scary message for intended behavior
     if (errorMessage?.includes('File has not been read yet')) {
       return <MessageResponse>
-          <Text dimColor>File must be read first</Text>
+          <Text dimColor>需要先读取文件</Text>
         </MessageResponse>;
     }
     if (errorMessage?.includes(FILE_NOT_FOUND_CWD_NOTE)) {
       return <MessageResponse>
-          <Text color="error">File not found</Text>
+          <Text color="error">文件不存在</Text>
         </MessageResponse>;
     }
     return <MessageResponse>
-        <Text color="error">Error editing file</Text>
+        <Text color="error">编辑文件失败</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;

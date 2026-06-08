@@ -33,7 +33,7 @@ function SearchResultSummary(t0) {
   }
   let t2;
   if ($[2] !== count || $[3] !== countLabel) {
-    t2 = count === 0 || count > 1 ? countLabel : countLabel.slice(0, -1);
+    t2 = countLabel;
     $[2] = count;
     $[3] = countLabel;
     $[4] = t2;
@@ -42,7 +42,7 @@ function SearchResultSummary(t0) {
   }
   let t3;
   if ($[5] !== t1 || $[6] !== t2) {
-    t3 = <Text>Found {t1}{t2}</Text>;
+    t3 = <Text>找到 {t1}{t2}</Text>;
     $[5] = t1;
     $[6] = t2;
     $[7] = t3;
@@ -52,7 +52,7 @@ function SearchResultSummary(t0) {
   const primaryText = t3;
   let t4;
   if ($[8] !== secondaryCount || $[9] !== secondaryLabel) {
-    t4 = secondaryCount !== undefined && secondaryLabel ? <Text>{" "}across <Text bold={true}>{secondaryCount} </Text>{secondaryCount === 0 || secondaryCount > 1 ? secondaryLabel : secondaryLabel.slice(0, -1)}</Text> : null;
+    t4 = secondaryCount !== undefined && secondaryLabel ? <Text>{" "}，涉及 <Text bold={true}>{secondaryCount} </Text>{secondaryLabel}</Text> : null;
     $[8] = secondaryCount;
     $[9] = secondaryLabel;
     $[10] = t4;
@@ -138,9 +138,9 @@ export function renderToolUseMessage({
   if (!pattern) {
     return null;
   }
-  const parts = [`pattern: "${pattern}"`];
+  const parts = [`模式: "${pattern}"`];
   if (path) {
-    parts.push(`path: "${verbose ? path : getDisplayPath(path)}"`);
+    parts.push(`路径: "${verbose ? path : getDisplayPath(path)}"`);
   }
   return parts.join(', ');
 }
@@ -153,11 +153,11 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
     const errorMessage = extractTag(result, 'tool_use_error');
     if (errorMessage?.includes(FILE_NOT_FOUND_CWD_NOTE)) {
       return <MessageResponse>
-          <Text color="error">File not found</Text>
+          <Text color="error">文件未找到</Text>
         </MessageResponse>;
     }
     return <MessageResponse>
-        <Text color="error">Error searching files</Text>
+        <Text color="error">搜索文件失败</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;
@@ -175,15 +175,15 @@ export function renderToolResultMessage({
   verbose: boolean;
 }): React.ReactNode {
   if (mode === 'content') {
-    return <SearchResultSummary count={numLines ?? 0} countLabel="lines" content={content} verbose={verbose} />;
+    return <SearchResultSummary count={numLines ?? 0} countLabel="行" content={content} verbose={verbose} />;
   }
   if (mode === 'count') {
-    return <SearchResultSummary count={numMatches ?? 0} countLabel="matches" secondaryCount={numFiles} secondaryLabel="files" content={content} verbose={verbose} />;
+    return <SearchResultSummary count={numMatches ?? 0} countLabel="处匹配" secondaryCount={numFiles} secondaryLabel="个文件" content={content} verbose={verbose} />;
   }
 
   // files_with_matches mode
   const fileListContent = filenames.map(filename => filename).join('\n');
-  return <SearchResultSummary count={numFiles} countLabel="files" content={fileListContent} verbose={verbose} />;
+  return <SearchResultSummary count={numFiles} countLabel="个文件" content={fileListContent} verbose={verbose} />;
 }
 export function getToolUseSummary(input: Partial<{
   pattern: string;

@@ -352,14 +352,14 @@ const externalTips: Tip[] = [
   {
     id: 'double-esc',
     content: async () =>
-      'Double-tap esc to rewind the conversation to a previous point in time',
+      '双击 Esc 可以将对话回退到之前的位置',
     cooldownSessions: 10,
     isRelevant: async () => !fileHistoryEnabled(),
   },
   {
     id: 'double-esc-code-restore',
     content: async () =>
-      'Double-tap esc to rewind the code and/or conversation to a previous point in time',
+      '双击 Esc 可以将代码和/或对话回退到之前的位置',
     cooldownSessions: 10,
     isRelevant: async () => fileHistoryEnabled(),
   },

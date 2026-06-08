@@ -403,13 +403,13 @@ export function BackgroundTasksDialog({
   const runningTeammateCount = count(teammateTasks, __2 => __2.status === 'running');
   const subtitle = intersperse([...(runningTeammateCount > 0 ? [<Text key="teammates">
               {runningTeammateCount}{' '}
-              {runningTeammateCount !== 1 ? 'agents' : 'agent'}
+              个智能体
             </Text>] : []), ...(runningBashCount > 0 ? [<Text key="shells">
               {runningBashCount}{' '}
-              {runningBashCount !== 1 ? 'active shells' : 'active shell'}
+              个运行中的命令
             </Text>] : []), ...(runningAgentCount > 0 ? [<Text key="agents">
               {runningAgentCount}{' '}
-              {runningAgentCount !== 1 ? 'active agents' : 'active agent'}
+              个运行中的智能体
             </Text>] : [])], index => <Text key={`separator-${index}`}> · </Text>);
   const actions = [<KeyboardShortcutHint key="upDown" shortcut="↑/↓" action="select" />, <KeyboardShortcutHint key="enter" shortcut="Enter" action="view" />, ...(currentSelection?.type === 'in_process_teammate' && currentSelection.status === 'running' ? [<KeyboardShortcutHint key="foreground" shortcut="f" action="foreground" />] : []), ...((currentSelection?.type === 'local_bash' || currentSelection?.type === 'local_agent' || currentSelection?.type === 'in_process_teammate' || currentSelection?.type === 'local_workflow' || currentSelection?.type === 'monitor_mcp' || currentSelection?.type === 'dream' || currentSelection?.type === 'remote_agent') && currentSelection.status === 'running' ? [<KeyboardShortcutHint key="kill" shortcut="x" action="stop" />] : []), ...(agentTasks.some(t => t.status === 'running') ? [<KeyboardShortcutHint key="kill-all" shortcut={killAgentsShortcut} action="stop all agents" />] : []), <KeyboardShortcutHint key="esc" shortcut="←/Esc" action="close" />];
   const handleCancel = () => onDone('Background tasks dialog dismissed', {
@@ -417,16 +417,16 @@ export function BackgroundTasksDialog({
   });
   function renderInputGuide(exitState: ExitState): React.ReactNode {
     if (exitState.pending) {
-      return <Text>Press {exitState.keyName} again to exit</Text>;
+      return <Text>再次按 {exitState.keyName} 退出</Text>;
     }
     return <Byline>{actions}</Byline>;
   }
   return <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
-      <Dialog title="Background tasks" subtitle={<>{subtitle}</>} onCancel={handleCancel} color="background" inputGuide={renderInputGuide}>
-        {allSelectableItems.length === 0 ? <Text dimColor>No tasks currently running</Text> : <Box flexDirection="column">
+      <Dialog title="后台任务" subtitle={<>{subtitle}</>} onCancel={handleCancel} color="background" inputGuide={renderInputGuide}>
+        {allSelectableItems.length === 0 ? <Text dimColor>当前没有运行中的任务</Text> : <Box flexDirection="column">
             {teammateTasks.length > 0 && <Box flexDirection="column">
                 {(bashTasks.length > 0 || remoteSessions.length > 0 || agentTasks.length > 0) && <Text dimColor>
-                    <Text bold>{'  '}Agents</Text> (
+                    <Text bold>{'  '}智能体</Text> (
                     {count(teammateTasks, i => i.type !== 'leader')})
                   </Text>}
                 <Box flexDirection="column">

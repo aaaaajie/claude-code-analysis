@@ -76,9 +76,9 @@ export function getFilePermissionOptions({
   if (yesInputMode && onAcceptFeedbackChange) {
     options.push({
       type: 'input',
-      label: 'Yes',
+      label: '允许',
       value: 'yes',
-      placeholder: 'and tell SecAI what to do next',
+      placeholder: '并告诉 SecAI 接下来怎么做',
       onChange: onAcceptFeedbackChange,
       allowEmptySubmitToCancel: true,
       option: {
@@ -87,7 +87,7 @@ export function getFilePermissionOptions({
     });
   } else {
     options.push({
-      label: 'Yes',
+      label: '允许',
       value: 'yes',
       option: {
         type: 'accept-once'
@@ -106,7 +106,7 @@ export function getFilePermissionOptions({
   // persisted permission rules.
   if ((inClaudeFolder || inGlobalClaudeFolder) && operationType !== 'read') {
     options.push({
-      label: 'Yes, and allow SecAI to edit its own settings for this session',
+      label: '允许，并在本次会话中允许 SecAI 编辑自身设置',
       value: 'yes-claude-folder',
       option: {
         type: 'accept-session',
@@ -119,26 +119,25 @@ export function getFilePermissionOptions({
     if (inAllowedPath) {
       // Inside working directory
       if (operationType === 'read') {
-        sessionLabel = 'Yes, during this session';
+        sessionLabel = '允许，本次会话内生效';
       } else {
         sessionLabel = <Text>
-            Yes, allow all edits during this session{' '}
+            允许本次会话内的所有编辑{' '}
             <Text bold>({modeCycleShortcut})</Text>
           </Text>;
       }
     } else {
       // Outside working directory - include directory name
       const dirPath = getDirectoryForPath(filePath);
-      const dirName = basename(dirPath) || 'this directory';
+      const dirName = basename(dirPath) || '此目录';
       if (operationType === 'read') {
         sessionLabel = <Text>
-            Yes, allow reading from <Text bold>{dirName}/</Text> during this
-            session
+            允许本次会话内读取 <Text bold>{dirName}/</Text>
           </Text>;
       } else {
         sessionLabel = <Text>
-            Yes, allow all edits in <Text bold>{dirName}/</Text> during this
-            session <Text bold>({modeCycleShortcut})</Text>
+            允许本次会话内编辑 <Text bold>{dirName}/</Text>{' '}
+            <Text bold>({modeCycleShortcut})</Text>
           </Text>;
       }
     }
@@ -152,7 +151,7 @@ export function getFilePermissionOptions({
   }
   if (toolPermissionContext.isBypassPermissionsModeAvailable) {
     options.push({
-      label: '是，本次允许并后续跳过权限',
+      label: '允许，并开启后续跳过权限',
       value: 'yes-bypass-permissions',
       option: {
         type: 'accept-bypass'
@@ -164,9 +163,9 @@ export function getFilePermissionOptions({
   if (noInputMode && onRejectFeedbackChange) {
     options.push({
       type: 'input',
-      label: 'No',
+      label: '拒绝',
       value: 'no',
-      placeholder: 'and tell SecAI what to do differently',
+      placeholder: '并告诉 SecAI 应该怎么调整',
       onChange: onRejectFeedbackChange,
       allowEmptySubmitToCancel: true,
       option: {
@@ -176,7 +175,7 @@ export function getFilePermissionOptions({
   } else {
     // Not in input mode - simple option
     options.push({
-      label: 'No',
+      label: '拒绝',
       value: 'no',
       option: {
         type: 'reject'

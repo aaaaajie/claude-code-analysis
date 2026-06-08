@@ -46,7 +46,7 @@ function FileWriteToolCreatedMessage(t0) {
   const {
     columns
   } = useTerminalSize();
-  const contentWithFallback = content || "(No content)";
+  const contentWithFallback = content || "（无内容）";
   const numLines = countLines(content);
   const plusLines = numLines - MAX_LINES_TO_RENDER;
   let t1;
@@ -130,9 +130,9 @@ export function userFacingName(input: Partial<{
   content: string;
 }> | undefined): string {
   if (input?.file_path?.startsWith(getPlansDirectory())) {
-    return 'Updated plan';
+    return '更新计划';
   }
-  return 'Write';
+  return '写入';
 }
 
 /** Gates fullscreen click-to-expand. Only `create` truncates (to
@@ -354,7 +354,7 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
 }): React.ReactNode {
   if (!verbose && typeof result === 'string' && extractTag(result, 'tool_use_error')) {
     return <MessageResponse>
-        <Text color="error">Error writing file</Text>
+        <Text color="error">写入文件失败</Text>
       </MessageResponse>;
   }
   return <FallbackToolUseErrorMessage result={result} verbose={verbose} />;

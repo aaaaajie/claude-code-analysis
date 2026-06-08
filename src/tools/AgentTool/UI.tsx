@@ -190,7 +190,7 @@ export function AgentPromptDisplay(t0) {
   t1 === undefined ? false : t1;
   let t2;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Text color="success" bold={true}>Prompt:</Text>;
+    t2 = <Text color="success" bold={true}>提示词：</Text>;
     $[0] = t2;
   } else {
     t2 = $[0];
@@ -212,7 +212,7 @@ export function AgentResponseDisplay(t0) {
   } = t0;
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = <Text color="success" bold={true}>Response:</Text>;
+    t1 = <Text color="success" bold={true}>响应：</Text>;
     $[0] = t1;
   } else {
     t1 = $[0];
@@ -330,7 +330,7 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     return <Box flexDirection="column">
         <MessageResponse height={1}>
           <Text>
-            Remote agent launched{' '}
+            远程智能体已启动{' '}
             <Text dimColor>
               · {internal.taskId} · {internal.sessionUrl}
             </Text>
@@ -345,12 +345,12 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     return <Box flexDirection="column">
         <MessageResponse height={1}>
           <Text>
-            Backgrounded agent
+            已转入后台运行
             {!isTranscriptMode && <Text dimColor>
                 {' ('}
                 <Byline>
-                  <KeyboardShortcutHint shortcut="↓" action="manage" />
-                  {prompt && <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="expand" />}
+                  <KeyboardShortcutHint shortcut="↓" action="管理" />
+                  {prompt && <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="展开" />}
                 </Byline>
                 {')'}
               </Text>}
@@ -373,8 +373,8 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
     content,
     prompt
   } = data;
-  const result = [totalToolUseCount === 1 ? '1 tool use' : `${totalToolUseCount} tool uses`, formatNumber(totalTokens) + ' tokens', formatDuration(totalDurationMs)];
-  const completionMessage = `Done (${result.join(' · ')})`;
+  const result = [`${totalToolUseCount} 次工具调用`, formatNumber(totalTokens) + ' tokens', formatDuration(totalDurationMs)];
+  const completionMessage = `完成（${result.join(' · ')}）`;
   const finalAssistantMessage = createAssistantMessage({
     content: completionMessage,
     usage: {
@@ -441,7 +441,7 @@ export function renderToolUseTag(input: Partial<{
   }
   return <>{tags}</>;
 }
-const INITIALIZING_TEXT = 'Initializing…';
+const INITIALIZING_TEXT = '正在初始化…';
 export function renderToolUseProgressMessage(progressMessages: ProgressMessage<Progress>[], {
   tools,
   verbose,
@@ -494,10 +494,9 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
     } = getProgressStats();
     return <MessageResponse height={1}>
         <Text dimColor>
-          In progress… · <Text bold>{toolUseCount}</Text> tool{' '}
-          {toolUseCount === 1 ? 'use' : 'uses'}
+          进行中… · <Text bold>{toolUseCount}</Text> 次工具调用
           {tokens && ` · ${formatNumber(tokens)} tokens`} ·{' '}
-          <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="expand" parens />
+          <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="展开" parens />
         </Text>
       </MessageResponse>;
   }
@@ -562,8 +561,7 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
         })}
         </SubAgentProvider>
         {hiddenToolUseCount > 0 && <Text dimColor>
-            +{hiddenToolUseCount} more tool{' '}
-            {hiddenToolUseCount === 1 ? 'use' : 'uses'} <CtrlOToExpand />
+            还有 {hiddenToolUseCount} 次工具调用未显示 <CtrlOToExpand />
           </Text>}
       </Box>
     </MessageResponse>;
@@ -695,7 +693,7 @@ export function renderGroupedAgentToolUse(toolUses: Array<{
       // Use the custom agent definition's color on the type, not the name
       descriptionColor = isCustomSubagentType(subagentType) ? getAgentColor(subagentType) as keyof Theme | undefined : undefined;
     } else {
-      agentType = parsedInput.success ? userFacingName(parsedInput.data) : 'Agent';
+      agentType = parsedInput.success ? userFacingName(parsedInput.data) : '智能体';
       description = parsedInput.success ? parsedInput.data.description : undefined;
       color = parsedInput.success ? userFacingNameBackgroundColor(parsedInput.data) : undefined;
       taskDescription = undefined;
@@ -731,7 +729,7 @@ export function renderGroupedAgentToolUse(toolUses: Array<{
 
   // Check if all agents are the same type
   const allSameType = agentStats.length > 0 && agentStats.every(stat => stat.agentType === agentStats[0]?.agentType);
-  const commonType = allSameType && agentStats[0]?.agentType !== 'Agent' ? agentStats[0]?.agentType : null;
+  const commonType = allSameType && agentStats[0]?.agentType !== '智能体' ? agentStats[0]?.agentType : null;
 
   // Check if all resolved agents are async (background)
   const allAsync = agentStats.every(stat => stat.isAsync);
@@ -740,16 +738,16 @@ export function renderGroupedAgentToolUse(toolUses: Array<{
         <ToolUseLoader shouldAnimate={shouldAnimate && anyUnresolved} isUnresolved={anyUnresolved} isError={anyError} />
         <Text>
           {allComplete ? allAsync ? <>
-                <Text bold>{toolUses.length}</Text> background agents launched{' '}
+                <Text bold>{toolUses.length}</Text> 个后台智能体已启动{' '}
                 <Text dimColor>
-                  <KeyboardShortcutHint shortcut="↓" action="manage" parens />
+                  <KeyboardShortcutHint shortcut="↓" action="管理" parens />
                 </Text>
               </> : <>
                 <Text bold>{toolUses.length}</Text>{' '}
-                {commonType ? `${commonType} agents` : 'agents'} finished
+                {commonType ? `${commonType} 智能体` : '智能体'}已完成
               </> : <>
-              Running <Text bold>{toolUses.length}</Text>{' '}
-              {commonType ? `${commonType} agents` : 'agents'}…
+              正在运行 <Text bold>{toolUses.length}</Text>{' '}
+              {commonType ? `${commonType} 智能体` : '个智能体'}…
             </>}{' '}
         </Text>
         {!allAsync && <CtrlOToExpand />}
@@ -765,13 +763,13 @@ export function userFacingName(input: Partial<{
   team_name: string;
 }> | undefined): string {
   if (input?.subagent_type && input.subagent_type !== GENERAL_PURPOSE_AGENT.agentType) {
-    // Display "worker" agents as "Agent" for cleaner UI
+    // Display worker agents with a clean generic label.
     if (input.subagent_type === 'worker') {
-      return 'Agent';
+      return '智能体';
     }
     return input.subagent_type;
   }
-  return 'Agent';
+  return '智能体';
 }
 export function userFacingNameBackgroundColor(input: Partial<{
   description: string;

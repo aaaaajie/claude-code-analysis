@@ -65,7 +65,7 @@ export function SkillPermissionRequest(props) {
   let t4;
   if ($[5] === Symbol.for("react.memo_cache_sentinel")) {
     t4 = [{
-      label: "Yes",
+      label: "允许",
       value: "yes",
       feedbackConfig: {
         type: "accept"
@@ -91,7 +91,7 @@ export function SkillPermissionRequest(props) {
       let t7;
       if ($[9] !== t5) {
         t7 = {
-          label: <Text>Yes, and don't ask again for {t5} in{" "}{t6}</Text>,
+          label: <Text>允许，并在{" "}{t6}{" "}中不再询问 {t5}</Text>,
           value: "yes-exact"
         };
         $[9] = t5;
@@ -122,7 +122,7 @@ export function SkillPermissionRequest(props) {
         let t11;
         if ($[14] !== t9) {
           t11 = {
-            label: <Text>Yes, and don't ask again for{" "}{t9} commands in{" "}{t10}</Text>,
+            label: <Text>允许，并在{" "}{t10}{" "}中不再询问 {t9} 命令</Text>,
             value: "yes-prefix"
           };
           $[14] = t9;
@@ -141,7 +141,7 @@ export function SkillPermissionRequest(props) {
   let t5;
   if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
     t5 = {
-      label: "No",
+      label: "拒绝",
       value: "no",
       feedbackConfig: {
         type: "reject"
@@ -300,10 +300,10 @@ export function SkillPermissionRequest(props) {
     t11 = $[32];
   }
   const handleCancel = t11;
-  const t12 = `Use skill "${skill}"?`;
+  const t12 = `使用技能 "${skill}"？`;
   let t13;
   if ($[33] === Symbol.for("react.memo_cache_sentinel")) {
-    t13 = <Text>SecAI may use instructions, code, or files from this Skill.</Text>;
+    t13 = <Text>SecAI 可能会使用该技能中的说明、代码或文件。</Text>;
     $[33] = t13;
   } else {
     t13 = $[33];
