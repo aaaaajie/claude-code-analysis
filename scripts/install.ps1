@@ -12,7 +12,7 @@ function Write-Section([string]$Text) {
   Write-Host ""
   Write-Host "----------------------------------------" -ForegroundColor DarkGray
   Write-Host "SecAI CLI Installer" -ForegroundColor Cyan
-  Write-Host $Text -ForegroundColor DarkGray
+  Write-Host "$Text / 安全下载并校验安装包" -ForegroundColor DarkGray
   Write-Host "----------------------------------------" -ForegroundColor DarkGray
   Write-Host ""
 }
@@ -53,7 +53,7 @@ function Normalize-BaseUrl([string]$Url) {
 
 function Get-SecAIPlatform {
   if ($PSVersionTable.PSEdition -eq "Core" -and -not $IsWindows) {
-    throw "This installer is for Windows. Use install.sh on macOS or Linux."
+    throw "This installer is for Windows. macOS/Linux 请使用 install.sh。"
   }
 
   $arch = $env:PROCESSOR_ARCHITECTURE
@@ -69,7 +69,7 @@ function Get-SecAIPlatform {
     return "windows-arm64"
   }
 
-  throw "Unsupported platform: windows-$($arch.ToLowerInvariant()). Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
+  throw "Unsupported platform: windows-$($arch.ToLowerInvariant()). 不支持的平台。Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
 }
 
 function Add-UserPath([string]$Dir) {
@@ -82,10 +82,10 @@ function Add-UserPath([string]$Dir) {
   if ($parts -notcontains $Dir) {
     [Environment]::SetEnvironmentVariable("Path", (($parts + $Dir) -join ";"), "User")
     $env:Path = "$Dir;$env:Path"
-    Write-Ok "User PATH updated."
-    Write-Warn "Reopen PowerShell, or run: `$env:Path = `"$Dir;`$env:Path`""
+    Write-Ok "PATH updated / 已写入用户 PATH。"
+    Write-Warn "Reopen PowerShell, or run / 重新打开 PowerShell，或执行: `$env:Path = `"$Dir;`$env:Path`""
   } else {
-    Write-Ok "User PATH already configured."
+    Write-Ok "PATH already configured / PATH 已配置。"
   }
 }
 
@@ -103,9 +103,9 @@ function Save-Url([string]$Uri, [string]$OutFile, [switch]$ShowProgress) {
     } catch {
       Complete-TextProgress
       if ($attempt -eq $maxAttempts) {
-        throw "Failed to download $Uri after $maxAttempts attempts: $($_.Exception.Message)"
+        throw "Failed to download $Uri after $maxAttempts attempts / 下载失败: $($_.Exception.Message)"
       }
-      Write-Host "Download failed, retrying ($attempt/$maxAttempts)..."
+      Write-Host "Download failed, retrying ($attempt/$maxAttempts) / 下载失败，正在重试..."
       Start-Sleep -Seconds (2 * $attempt)
     }
   }
@@ -183,15 +183,15 @@ function Expand-GzipFile([string]$Source, [string]$Destination) {
 
 $BaseUrl = Normalize-BaseUrl $BaseUrl
 $Platform = Get-SecAIPlatform
-Write-Section "Secure install with verified downloads."
+Write-Section "Secure install with verified downloads"
 
 if (-not $Version) {
-  Write-Step "Resolving latest version from $Channel"
+  Write-Step "Resolving latest version / 获取最新版本 ($Channel)"
   $Version = (Invoke-RestMethod -Uri "$BaseUrl/$Channel").ToString().Trim()
 }
 
 if (-not $Version) {
-  throw "Unable to resolve SecAI version from $BaseUrl/$Channel"
+  throw "Unable to resolve SecAI version from $BaseUrl/$Channel / 无法获取 SecAI 版本"
 }
 
 $tmpDir = Join-Path ([IO.Path]::GetTempPath()) ("secai-install-" + [Guid]::NewGuid().ToString("N"))
@@ -202,67 +202,71 @@ try {
   $binaryPath = Join-Path $tmpDir "secai.exe.download"
   $packagePath = Join-Path $tmpDir "secai.exe.package"
 
-  Write-Step "Downloading manifest"
+  Write-Step "Downloading manifest / 下载版本清单"
   Save-Url "$BaseUrl/$Version/manifest.json" $manifestPath
   $manifest = Get-Content -Raw -Path $manifestPath | ConvertFrom-Json
   $platformInfo = $manifest.platforms.$Platform
   if (-not $platformInfo) {
-    throw "Unsupported platform: $Platform. Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
+    throw "Unsupported platform: $Platform / 不支持的平台。Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
   }
   if (-not $platformInfo.binary -or -not $platformInfo.checksum -or -not $platformInfo.size -or -not $platformInfo.download -or $platformInfo.compression -ne "gzip" -or -not $platformInfo.downloadChecksum -or -not $platformInfo.downloadSize) {
-    throw "Invalid manifest for $Version $Platform. Gzip download metadata is required."
+    throw "Invalid manifest for $Version $Platform. Gzip download metadata is required / 清单缺少 gzip 下载信息。"
   }
 
   Write-Host "----------------------------------------" -ForegroundColor DarkGray
-  Write-SummaryRow "Version" $Version
-  Write-SummaryRow "Platform" $Platform
-  Write-SummaryRow "Download" (Format-Bytes ([int64]$platformInfo.downloadSize))
-  Write-SummaryRow "Install" $InstallDir
+  Write-SummaryRow "版本" $Version
+  Write-SummaryRow "平台" $Platform
+  Write-SummaryRow "下载大小" (Format-Bytes ([int64]$platformInfo.downloadSize))
+  Write-SummaryRow "安装目录" $InstallDir
   Write-Host "----------------------------------------" -ForegroundColor DarkGray
   Write-Host ""
 
-  Write-Step "Downloading SecAI"
+  Write-Step "Downloading SecAI / 下载 SecAI"
   Save-Url "$BaseUrl/$Version/$Platform/$($platformInfo.download)" $packagePath -ShowProgress
 
   $actualDownloadSize = (Get-Item $packagePath).Length
   if ($actualDownloadSize -ne [int64]$platformInfo.downloadSize) {
-    throw "Compressed size mismatch: expected $($platformInfo.downloadSize), got $actualDownloadSize"
+    throw "Compressed size mismatch / 压缩包大小不匹配: expected $($platformInfo.downloadSize), got $actualDownloadSize"
   }
 
-  Write-Step "Verifying compressed package"
+  Write-Step "Verifying compressed package / 校验压缩包"
   $actualDownloadHash = (Get-FileHash -Algorithm SHA256 -Path $packagePath).Hash.ToLowerInvariant()
   if ($actualDownloadHash -ne $platformInfo.downloadChecksum.ToLowerInvariant()) {
-    throw "Compressed checksum mismatch: expected $($platformInfo.downloadChecksum), got $actualDownloadHash"
+    throw "Compressed checksum mismatch / 压缩包校验失败: expected $($platformInfo.downloadChecksum), got $actualDownloadHash"
   }
-  Write-Ok "Compressed package verified."
+  Write-Ok "Compressed package verified / 压缩包校验通过。"
 
-  Write-Step "Unpacking binary"
+  Write-Step "Unpacking binary / 解压程序"
   Expand-GzipFile $packagePath $binaryPath
 
   $actualSize = (Get-Item $binaryPath).Length
   if ($actualSize -ne [int64]$platformInfo.size) {
-    throw "Size mismatch: expected $($platformInfo.size), got $actualSize"
+    throw "Size mismatch / 程序大小不匹配: expected $($platformInfo.size), got $actualSize"
   }
 
-  Write-Step "Verifying binary"
+  Write-Step "Verifying binary / 校验程序"
   $actualHash = (Get-FileHash -Algorithm SHA256 -Path $binaryPath).Hash.ToLowerInvariant()
   if ($actualHash -ne $platformInfo.checksum.ToLowerInvariant()) {
-    throw "Checksum mismatch: expected $($platformInfo.checksum), got $actualHash"
+    throw "Checksum mismatch / 程序校验失败: expected $($platformInfo.checksum), got $actualHash"
   }
-  Write-Ok "Binary verified."
+  Write-Ok "Binary verified / 程序校验通过。"
 
-  Write-Step "Installing"
+  Write-Step "Installing / 安装"
   New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
   $target = Join-Path $InstallDir "secai.exe"
   Copy-Item -Force -Path $binaryPath -Destination $target
 
   Add-UserPath $InstallDir
-  Write-Ok "Installed: $target"
+  Write-Ok "Installed / 安装完成: $target"
   & $target --version
-  Write-Warn "Git for Windows is required when SecAI executes shell tools."
+  Write-Warn "Git for Windows is required when SecAI executes shell tools / 使用 shell 工具需要安装 Git for Windows。"
+  Write-Host "Install Git / 安装 Git:"
+  Write-Host "  winget install --id Git.Git -e --source winget"
+  Write-Host "  choco install git -y"
+  Write-Host "  https://git-scm.com/download/win"
   Write-Host ""
   Write-Host "----------------------------------------" -ForegroundColor DarkGray
-  Write-Ok "SecAI is ready."
+  Write-Ok "SecAI is ready / SecAI 已就绪。"
   Write-Host "----------------------------------------" -ForegroundColor DarkGray
 } finally {
   Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue

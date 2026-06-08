@@ -34,7 +34,7 @@ header() {
   info ""
   rule
   printf '%sSecAI CLI Installer%s\n' "$BOLD" "$RESET"
-  info "${DIM}Secure install with verified downloads.${RESET}"
+  info "${DIM}Secure install with verified downloads / 安全下载并校验安装包${RESET}"
   rule
   info ""
 }
@@ -185,7 +185,7 @@ detect_platform() {
 }
 
 unsupported() {
-  fail "Unsupported platform: $1. Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
+  fail "Unsupported platform / 不支持的平台: $1. Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
 }
 
 extract_string() {
@@ -231,22 +231,22 @@ add_path_hint() {
     printf '\n# SecAI CLI\n%s\n' "$line" >> "$rc_file"
     ok "PATH updated: $rc_file"
   else
-    ok "PATH already configured: $rc_file"
+    ok "PATH already configured / PATH 已配置: $rc_file"
   fi
 
-  warn "Restart your terminal, or run: export PATH=\"$bin_dir:\$PATH\""
+  warn "Restart your terminal, or run / 重新打开终端，或执行: export PATH=\"$bin_dir:\$PATH\""
 }
 
 header
 
 PLATFORM="$(detect_platform)"
 if [ -z "$VERSION" ]; then
-  step "Resolving latest version from $CHANNEL"
+  step "Resolving latest version / 获取最新版本 ($CHANNEL)"
   VERSION="$(fetch_text "$BASE_URL/$CHANNEL" | tr -d '\r\n ')"
 fi
 
 if [ -z "$VERSION" ]; then
-  fail "Unable to resolve SecAI version from $BASE_URL/$CHANNEL"
+  fail "Unable to resolve SecAI version / 无法获取 SecAI 版本: $BASE_URL/$CHANNEL"
 fi
 
 TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t secai)"
@@ -258,7 +258,7 @@ trap cleanup EXIT INT TERM
 MANIFEST="$TMP_DIR/manifest.json"
 BINARY_TMP="$TMP_DIR/secai.download"
 PACKAGE_TMP="$TMP_DIR/secai.package"
-step "Downloading manifest"
+step "Downloading manifest / 下载版本清单"
 download_file "$BASE_URL/$VERSION/manifest.json" "$MANIFEST"
 
 PLATFORM_BLOCK="$(awk -v platform="\"$PLATFORM\"" '
@@ -280,36 +280,36 @@ DOWNLOAD_SHA="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_string downloadChecksu
 DOWNLOAD_SIZE="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_number downloadSize)"
 
 if [ -z "$BINARY_NAME" ] || [ -z "$EXPECTED_SHA" ] || [ -z "$EXPECTED_SIZE" ] || [ -z "$DOWNLOAD_NAME" ] || [ -z "$DOWNLOAD_SHA" ] || [ -z "$DOWNLOAD_SIZE" ] || [ "$COMPRESSION" != "gzip" ]; then
-  fail "Invalid manifest for $VERSION $PLATFORM. Gzip download metadata is required."
+  fail "Invalid manifest / 版本清单无效: $VERSION $PLATFORM. Gzip download metadata is required."
 fi
 
 if ! have gzip && ! have gunzip; then
-  fail "gzip or gunzip is required to install SecAI."
+  fail "gzip or gunzip is required to install SecAI / 安装 SecAI 需要 gzip 或 gunzip。"
 fi
 
 rule
-printf '  %-9s %s\n' 'Version' "$VERSION"
-printf '  %-9s %s\n' 'Platform' "$PLATFORM"
-printf '  %-9s %s\n' 'Download' "$(human_size "$DOWNLOAD_SIZE")"
-printf '  %-9s %s\n' 'Install' "$INSTALL_DIR"
+printf '  %-12s %s\n' '版本' "$VERSION"
+printf '  %-12s %s\n' '平台' "$PLATFORM"
+printf '  %-12s %s\n' '下载大小' "$(human_size "$DOWNLOAD_SIZE")"
+printf '  %-12s %s\n' '安装目录' "$INSTALL_DIR"
 rule
 
-step "Downloading SecAI"
+step "Downloading SecAI / 下载 SecAI"
 download_file "$BASE_URL/$VERSION/$PLATFORM/$DOWNLOAD_NAME" "$PACKAGE_TMP" 1
 
 ACTUAL_DOWNLOAD_SIZE="$(wc -c < "$PACKAGE_TMP" | tr -d ' ')"
 if [ "$ACTUAL_DOWNLOAD_SIZE" != "$DOWNLOAD_SIZE" ]; then
-  fail "Compressed size mismatch: expected $DOWNLOAD_SIZE, got $ACTUAL_DOWNLOAD_SIZE."
+  fail "Compressed size mismatch / 压缩包大小不匹配: expected $DOWNLOAD_SIZE, got $ACTUAL_DOWNLOAD_SIZE."
 fi
 
-step "Verifying compressed package"
+step "Verifying compressed package / 校验压缩包"
 ACTUAL_DOWNLOAD_SHA="$(sha256_file "$PACKAGE_TMP")"
 if [ "$ACTUAL_DOWNLOAD_SHA" != "$DOWNLOAD_SHA" ]; then
-  fail "Compressed checksum mismatch: expected $DOWNLOAD_SHA, got $ACTUAL_DOWNLOAD_SHA."
+  fail "Compressed checksum mismatch / 压缩包校验失败: expected $DOWNLOAD_SHA, got $ACTUAL_DOWNLOAD_SHA."
 fi
-ok "Compressed package verified"
+ok "Compressed package verified / 压缩包校验通过"
 
-step "Unpacking binary"
+step "Unpacking binary / 解压程序"
 if have gzip; then
   gzip -dc "$PACKAGE_TMP" > "$BINARY_TMP"
 else
@@ -318,27 +318,27 @@ fi
 
 ACTUAL_SIZE="$(wc -c < "$BINARY_TMP" | tr -d ' ')"
 if [ "$ACTUAL_SIZE" != "$EXPECTED_SIZE" ]; then
-  fail "Size mismatch: expected $EXPECTED_SIZE, got $ACTUAL_SIZE."
+  fail "Size mismatch / 程序大小不匹配: expected $EXPECTED_SIZE, got $ACTUAL_SIZE."
 fi
 
-step "Verifying binary"
+step "Verifying binary / 校验程序"
 ACTUAL_SHA="$(sha256_file "$BINARY_TMP")"
 if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
-  fail "Checksum mismatch: expected $EXPECTED_SHA, got $ACTUAL_SHA."
+  fail "Checksum mismatch / 程序校验失败: expected $EXPECTED_SHA, got $ACTUAL_SHA."
 fi
-ok "Binary verified"
+ok "Binary verified / 程序校验通过"
 
-step "Installing"
+step "Installing / 安装"
 mkdir -p "$INSTALL_DIR"
 TARGET="$INSTALL_DIR/secai"
 cp "$BINARY_TMP" "$TARGET"
 chmod 755 "$TARGET"
 
 add_path_hint "$INSTALL_DIR"
-ok "Installed: $TARGET"
+ok "Installed / 安装完成: $TARGET"
 "$TARGET" --version
 info ""
 rule
-ok "SecAI is ready."
+ok "SecAI is ready / SecAI 已就绪。"
 rule
 info ""
