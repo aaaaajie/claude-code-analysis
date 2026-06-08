@@ -101,7 +101,7 @@ function Save-Url([string]$Uri, [string]$OutFile, [switch]$ShowProgress) {
       }
       return
     } catch {
-      Write-Progress -Activity "Downloading SecAI" -Completed -ErrorAction SilentlyContinue
+      Complete-TextProgress
       if ($attempt -eq $maxAttempts) {
         throw "Failed to download $Uri after $maxAttempts attempts: $($_.Exception.Message)"
       }
@@ -109,6 +109,25 @@ function Save-Url([string]$Uri, [string]$OutFile, [switch]$ShowProgress) {
       Start-Sleep -Seconds (2 * $attempt)
     }
   }
+}
+
+function Write-TextProgress([int64]$Received, [int64]$Total) {
+  $width = 28
+  if ($Total -gt 0) {
+    $percentValue = [Math]::Min(100, [double]$Received * 100 / [double]$Total)
+    $filled = [Math]::Min($width, [int][Math]::Floor($percentValue * $width / 100))
+    $empty = $width - $filled
+    $bar = ("#" * $filled) + ("-" * $empty)
+    $line = ("  [{0}] {1,6:N1}%  {2} / {3}" -f $bar, $percentValue, (Format-Bytes $Received), (Format-Bytes $Total))
+  } else {
+    $line = ("  Downloaded {0}" -f (Format-Bytes $Received))
+  }
+
+  Write-Host -NoNewline "`r$line"
+}
+
+function Complete-TextProgress {
+  Write-Host ""
 }
 
 function Save-UrlWithProgress([string]$Uri, [string]$OutFile) {
@@ -122,23 +141,24 @@ function Save-UrlWithProgress([string]$Uri, [string]$OutFile) {
     try {
       $buffer = New-Object byte[] 1048576
       $received = [int64]0
+      $lastRender = [DateTime]::UtcNow.AddSeconds(-2)
       while (($read = $inputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
         $outputStream.Write($buffer, 0, $read)
         $received += $read
-        if ($total -gt 0) {
-          $percent = [Math]::Min(100, [int](($received * 100) / $total))
-          Write-Progress -Activity "Downloading SecAI" -Status "$(Format-Bytes $received) / $(Format-Bytes $total)" -PercentComplete $percent
-        } else {
-          Write-Progress -Activity "Downloading SecAI" -Status "$(Format-Bytes $received) downloaded"
+        $now = [DateTime]::UtcNow
+        if (($now - $lastRender).TotalMilliseconds -ge 200 -or ($total -gt 0 -and $received -eq $total)) {
+          Write-TextProgress $received $total
+          $lastRender = $now
         }
       }
+      Write-TextProgress $received $total
+      Complete-TextProgress
     } finally {
       $outputStream.Dispose()
       $inputStream.Dispose()
     }
   } finally {
     $response.Dispose()
-    Write-Progress -Activity "Downloading SecAI" -Completed -ErrorAction SilentlyContinue
   }
 }
 
