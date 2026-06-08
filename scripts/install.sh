@@ -6,6 +6,60 @@ CHANNEL="${SECAI_UPDATE_CHANNEL:-latest}"
 VERSION=""
 INSTALL_DIR="${SECAI_INSTALL_DIR:-$HOME/.secai/bin}"
 
+if [ -t 1 ]; then
+  BOLD="$(printf '\033[1m')"
+  DIM="$(printf '\033[2m')"
+  GREEN="$(printf '\033[32m')"
+  YELLOW="$(printf '\033[33m')"
+  RED="$(printf '\033[31m')"
+  RESET="$(printf '\033[0m')"
+else
+  BOLD=""
+  DIM=""
+  GREEN=""
+  YELLOW=""
+  RED=""
+  RESET=""
+fi
+
+info() {
+  printf '%s\n' "$*"
+}
+
+step() {
+  printf '%s==>%s %s\n' "$BOLD" "$RESET" "$*"
+}
+
+ok() {
+  printf '%sOK%s %s\n' "$GREEN" "$RESET" "$*"
+}
+
+warn() {
+  printf '%sWARN%s %s\n' "$YELLOW" "$RESET" "$*"
+}
+
+fail() {
+  printf '%sERROR%s %s\n' "$RED" "$RESET" "$*" >&2
+  exit 1
+}
+
+human_size() {
+  awk -v bytes="$1" 'BEGIN {
+    split("B KiB MiB GiB", units, " ")
+    value = bytes + 0
+    unit = 1
+    while (value >= 1024 && unit < 4) {
+      value = value / 1024
+      unit++
+    }
+    if (unit == 1) {
+      printf "%d %s", value, units[unit]
+    } else {
+      printf "%.2f %s", value, units[unit]
+    }
+  }'
+}
+
 usage() {
   cat <<'EOF'
 SecAI CLI installer
@@ -64,8 +118,7 @@ fetch_text() {
   elif have wget; then
     wget -qO- "$url"
   else
-    printf 'curl or wget is required.\n' >&2
-    exit 1
+    fail "curl or wget is required."
   fi
 }
 
@@ -73,12 +126,11 @@ download_file() {
   url="$1"
   output="$2"
   if have curl; then
-    curl -fL "$url" -o "$output"
+    curl -fsSL "$url" -o "$output"
   elif have wget; then
-    wget -O "$output" "$url"
+    wget -qO "$output" "$url"
   else
-    printf 'curl or wget is required.\n' >&2
-    exit 1
+    fail "curl or wget is required."
   fi
 }
 
@@ -102,8 +154,7 @@ detect_platform() {
       esac
       ;;
     MINGW*|MSYS*|CYGWIN*)
-      printf 'Please use PowerShell installer on Windows: irm https://ai.rzsec.cn/install.ps1 | iex\n' >&2
-      exit 1
+      fail "Please use PowerShell installer on Windows: irm https://ai.rzsec.cn/install.ps1 | iex"
       ;;
     *)
       unsupported "$os-$arch"
@@ -112,9 +163,7 @@ detect_platform() {
 }
 
 unsupported() {
-  printf 'Unsupported platform: %s\n' "$1" >&2
-  printf 'Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64\n' >&2
-  exit 1
+  fail "Unsupported platform: $1. Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
 }
 
 extract_string() {
@@ -134,8 +183,7 @@ sha256_file() {
   elif have shasum; then
     shasum -a 256 "$file" | awk '{print $1}'
   else
-    printf 'sha256sum or shasum is required.\n' >&2
-    exit 1
+    fail "sha256sum or shasum is required."
   fi
 }
 
@@ -159,20 +207,27 @@ add_path_hint() {
   touch "$rc_file"
   if ! grep -F "$line" "$rc_file" >/dev/null 2>&1; then
     printf '\n# SecAI CLI\n%s\n' "$line" >> "$rc_file"
+    ok "PATH updated: $rc_file"
+  else
+    ok "PATH already configured: $rc_file"
   fi
 
-  printf 'Updated PATH in %s. Reopen your terminal, or run:\n' "$rc_file"
-  printf '  export PATH="%s:$PATH"\n' "$bin_dir"
+  warn "Restart your terminal, or run: export PATH=\"$bin_dir:\$PATH\""
 }
+
+info ""
+info "${BOLD}SecAI CLI Installer${RESET}"
+info "${DIM}Secure download, checksum verification, and local install.${RESET}"
+info ""
 
 PLATFORM="$(detect_platform)"
 if [ -z "$VERSION" ]; then
+  step "Resolving latest version from $CHANNEL"
   VERSION="$(fetch_text "$BASE_URL/$CHANNEL" | tr -d '\r\n ')"
 fi
 
 if [ -z "$VERSION" ]; then
-  printf 'Unable to resolve SecAI version from %s/%s\n' "$BASE_URL" "$CHANNEL" >&2
-  exit 1
+  fail "Unable to resolve SecAI version from $BASE_URL/$CHANNEL"
 fi
 
 TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t secai)"
@@ -184,6 +239,7 @@ trap cleanup EXIT INT TERM
 MANIFEST="$TMP_DIR/manifest.json"
 BINARY_TMP="$TMP_DIR/secai.download"
 PACKAGE_TMP="$TMP_DIR/secai.package"
+step "Downloading manifest"
 download_file "$BASE_URL/$VERSION/manifest.json" "$MANIFEST"
 
 PLATFORM_BLOCK="$(awk -v platform="\"$PLATFORM\"" '
@@ -205,31 +261,35 @@ DOWNLOAD_SHA="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_string downloadChecksu
 DOWNLOAD_SIZE="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_number downloadSize)"
 
 if [ -z "$BINARY_NAME" ] || [ -z "$EXPECTED_SHA" ] || [ -z "$EXPECTED_SIZE" ] || [ -z "$DOWNLOAD_NAME" ] || [ -z "$DOWNLOAD_SHA" ] || [ -z "$DOWNLOAD_SIZE" ] || [ "$COMPRESSION" != "gzip" ]; then
-  printf 'Invalid manifest for %s %s.\n' "$VERSION" "$PLATFORM" >&2
-  printf 'Gzip download metadata is required.\n' >&2
-  exit 1
+  fail "Invalid manifest for $VERSION $PLATFORM. Gzip download metadata is required."
 fi
 
 if ! have gzip && ! have gunzip; then
-  printf 'gzip or gunzip is required to install SecAI.\n' >&2
-  exit 1
+  fail "gzip or gunzip is required to install SecAI."
 fi
 
-printf 'Installing SecAI %s for %s...\n' "$VERSION" "$PLATFORM"
+info "Version:  $VERSION"
+info "Platform: $PLATFORM"
+info "Download: $(human_size "$DOWNLOAD_SIZE")"
+info "Install:  $INSTALL_DIR"
+info ""
+
+step "Downloading SecAI"
 download_file "$BASE_URL/$VERSION/$PLATFORM/$DOWNLOAD_NAME" "$PACKAGE_TMP"
 
 ACTUAL_DOWNLOAD_SIZE="$(wc -c < "$PACKAGE_TMP" | tr -d ' ')"
 if [ "$ACTUAL_DOWNLOAD_SIZE" != "$DOWNLOAD_SIZE" ]; then
-  printf 'Compressed size mismatch: expected %s, got %s.\n' "$DOWNLOAD_SIZE" "$ACTUAL_DOWNLOAD_SIZE" >&2
-  exit 1
+  fail "Compressed size mismatch: expected $DOWNLOAD_SIZE, got $ACTUAL_DOWNLOAD_SIZE."
 fi
 
+step "Verifying compressed package"
 ACTUAL_DOWNLOAD_SHA="$(sha256_file "$PACKAGE_TMP")"
 if [ "$ACTUAL_DOWNLOAD_SHA" != "$DOWNLOAD_SHA" ]; then
-  printf 'Compressed checksum mismatch: expected %s, got %s.\n' "$DOWNLOAD_SHA" "$ACTUAL_DOWNLOAD_SHA" >&2
-  exit 1
+  fail "Compressed checksum mismatch: expected $DOWNLOAD_SHA, got $ACTUAL_DOWNLOAD_SHA."
 fi
+ok "Compressed package verified"
 
+step "Unpacking binary"
 if have gzip; then
   gzip -dc "$PACKAGE_TMP" > "$BINARY_TMP"
 else
@@ -238,21 +298,23 @@ fi
 
 ACTUAL_SIZE="$(wc -c < "$BINARY_TMP" | tr -d ' ')"
 if [ "$ACTUAL_SIZE" != "$EXPECTED_SIZE" ]; then
-  printf 'Size mismatch: expected %s, got %s.\n' "$EXPECTED_SIZE" "$ACTUAL_SIZE" >&2
-  exit 1
+  fail "Size mismatch: expected $EXPECTED_SIZE, got $ACTUAL_SIZE."
 fi
 
+step "Verifying binary"
 ACTUAL_SHA="$(sha256_file "$BINARY_TMP")"
 if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
-  printf 'Checksum mismatch: expected %s, got %s.\n' "$EXPECTED_SHA" "$ACTUAL_SHA" >&2
-  exit 1
+  fail "Checksum mismatch: expected $EXPECTED_SHA, got $ACTUAL_SHA."
 fi
+ok "Binary verified"
 
+step "Installing"
 mkdir -p "$INSTALL_DIR"
 TARGET="$INSTALL_DIR/secai"
 cp "$BINARY_TMP" "$TARGET"
 chmod 755 "$TARGET"
 
 add_path_hint "$INSTALL_DIR"
-printf 'Installed SecAI: %s\n' "$TARGET"
+ok "Installed: $TARGET"
 "$TARGET" --version
+info ""

@@ -6,6 +6,40 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+
+function Write-Section([string]$Text) {
+  Write-Host ""
+  Write-Host "SecAI CLI Installer" -ForegroundColor Cyan
+  Write-Host $Text -ForegroundColor DarkGray
+  Write-Host ""
+}
+
+function Write-Step([string]$Text) {
+  Write-Host "==> $Text" -ForegroundColor Cyan
+}
+
+function Write-Ok([string]$Text) {
+  Write-Host "OK  $Text" -ForegroundColor Green
+}
+
+function Write-Warn([string]$Text) {
+  Write-Host "WARN $Text" -ForegroundColor Yellow
+}
+
+function Format-Bytes([int64]$Bytes) {
+  $units = @("B", "KiB", "MiB", "GiB")
+  $value = [double]$Bytes
+  $index = 0
+  while ($value -ge 1024 -and $index -lt ($units.Length - 1)) {
+    $value = $value / 1024
+    $index++
+  }
+  if ($index -eq 0) {
+    return ("{0:N0} {1}" -f $value, $units[$index])
+  }
+  return ("{0:N2} {1}" -f $value, $units[$index])
+}
 
 function Normalize-BaseUrl([string]$Url) {
   return $Url.TrimEnd("/")
@@ -42,8 +76,10 @@ function Add-UserPath([string]$Dir) {
   if ($parts -notcontains $Dir) {
     [Environment]::SetEnvironmentVariable("Path", (($parts + $Dir) -join ";"), "User")
     $env:Path = "$Dir;$env:Path"
-    Write-Host "Updated user PATH. Reopen PowerShell, or run:"
-    Write-Host "  `$env:Path = `"$Dir;`$env:Path`""
+    Write-Ok "User PATH updated."
+    Write-Warn "Reopen PowerShell, or run: `$env:Path = `"$Dir;`$env:Path`""
+  } else {
+    Write-Ok "User PATH already configured."
   }
 }
 
@@ -85,8 +121,10 @@ function Expand-GzipFile([string]$Source, [string]$Destination) {
 
 $BaseUrl = Normalize-BaseUrl $BaseUrl
 $Platform = Get-SecAIPlatform
+Write-Section "Secure download, checksum verification, and local install."
 
 if (-not $Version) {
+  Write-Step "Resolving latest version from $Channel"
   $Version = (Invoke-RestMethod -Uri "$BaseUrl/$Channel").ToString().Trim()
 }
 
@@ -102,6 +140,7 @@ try {
   $binaryPath = Join-Path $tmpDir "secai.exe.download"
   $packagePath = Join-Path $tmpDir "secai.exe.package"
 
+  Write-Step "Downloading manifest"
   Save-Url "$BaseUrl/$Version/manifest.json" $manifestPath
   $manifest = Get-Content -Raw -Path $manifestPath | ConvertFrom-Json
   $platformInfo = $manifest.platforms.$Platform
@@ -112,7 +151,13 @@ try {
     throw "Invalid manifest for $Version $Platform. Gzip download metadata is required."
   }
 
-  Write-Host "Installing SecAI $Version for $Platform..."
+  Write-Host "Version:  $Version"
+  Write-Host "Platform: $Platform"
+  Write-Host "Download: $(Format-Bytes ([int64]$platformInfo.downloadSize))"
+  Write-Host "Install:  $InstallDir"
+  Write-Host ""
+
+  Write-Step "Downloading SecAI"
   Save-Url "$BaseUrl/$Version/$Platform/$($platformInfo.download)" $packagePath
 
   $actualDownloadSize = (Get-Item $packagePath).Length
@@ -120,11 +165,14 @@ try {
     throw "Compressed size mismatch: expected $($platformInfo.downloadSize), got $actualDownloadSize"
   }
 
+  Write-Step "Verifying compressed package"
   $actualDownloadHash = (Get-FileHash -Algorithm SHA256 -Path $packagePath).Hash.ToLowerInvariant()
   if ($actualDownloadHash -ne $platformInfo.downloadChecksum.ToLowerInvariant()) {
     throw "Compressed checksum mismatch: expected $($platformInfo.downloadChecksum), got $actualDownloadHash"
   }
+  Write-Ok "Compressed package verified."
 
+  Write-Step "Unpacking binary"
   Expand-GzipFile $packagePath $binaryPath
 
   $actualSize = (Get-Item $binaryPath).Length
@@ -132,19 +180,22 @@ try {
     throw "Size mismatch: expected $($platformInfo.size), got $actualSize"
   }
 
+  Write-Step "Verifying binary"
   $actualHash = (Get-FileHash -Algorithm SHA256 -Path $binaryPath).Hash.ToLowerInvariant()
   if ($actualHash -ne $platformInfo.checksum.ToLowerInvariant()) {
     throw "Checksum mismatch: expected $($platformInfo.checksum), got $actualHash"
   }
+  Write-Ok "Binary verified."
 
+  Write-Step "Installing"
   New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
   $target = Join-Path $InstallDir "secai.exe"
   Copy-Item -Force -Path $binaryPath -Destination $target
 
   Add-UserPath $InstallDir
-  Write-Host "Installed SecAI: $target"
+  Write-Ok "Installed: $target"
   & $target --version
-  Write-Host "Note: Git for Windows is required when SecAI executes shell tools."
+  Write-Warn "Git for Windows is required when SecAI executes shell tools."
 } finally {
   Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
 }
