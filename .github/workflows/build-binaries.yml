@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: ${{ matrix.target }}
@@ -34,6 +37,7 @@ jobs:
         with:
           node-version: 20.19.0
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
 
@@ -53,3 +57,129 @@ jobs:
             dist/artifacts/secai-*-${{ matrix.target }}-installer.ps1
             dist/update/secai-cli/**
           if-no-files-found: error
+
+  publish:
+    name: merge update feed and publish
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      DEPLOY_HOST: ${{ secrets.SECAI_DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.SECAI_DEPLOY_USER }}
+      DEPLOY_KEY: ${{ secrets.SECAI_DEPLOY_KEY }}
+      DEPLOY_PORT: ${{ secrets.SECAI_DEPLOY_PORT || '22' }}
+      DEPLOY_PATH: ${{ secrets.SECAI_DEPLOY_PATH || '/project/secai-gateway/downloads/secai-cli' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: secai-*
+          path: dist
+          merge-multiple: true
+
+      - name: Merge platform manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          node scripts/merge-update-manifest.mjs "$version"
+
+      - name: Verify update feed
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          node - <<'NODE' "$version"
+          const fs = require('node:fs')
+          const crypto = require('node:crypto')
+          const zlib = require('node:zlib')
+
+          const version = process.argv[2]
+          const expected = [
+            'linux-arm64',
+            'linux-x64',
+            'macos-arm64',
+            'macos-x64',
+            'windows-arm64',
+            'windows-x64',
+          ]
+          const root = `dist/update/secai-cli/${version}`
+          const manifest = JSON.parse(fs.readFileSync(`${root}/manifest.json`, 'utf8'))
+          const sha256 = (buffer) => crypto.createHash('sha256').update(buffer).digest('hex')
+
+          if (manifest.version !== version) {
+            throw new Error(`Manifest version mismatch: expected ${version}, got ${manifest.version}`)
+          }
+
+          for (const platform of expected) {
+            const entry = manifest.platforms?.[platform]
+            if (!entry) {
+              throw new Error(`Missing platform manifest entry: ${platform}`)
+            }
+
+            for (const key of ['binary', 'checksum', 'size', 'download', 'compression', 'downloadChecksum', 'downloadSize']) {
+              if (entry[key] == null) {
+                throw new Error(`Missing ${platform}.${key}`)
+              }
+            }
+
+            if (entry.compression !== 'gzip') {
+              throw new Error(`Unsupported compression for ${platform}: ${entry.compression}`)
+            }
+
+            const raw = fs.readFileSync(`${root}/${platform}/${entry.binary}`)
+            const gz = fs.readFileSync(`${root}/${platform}/${entry.download}`)
+            const unpacked = zlib.gunzipSync(gz)
+
+            if (raw.length !== entry.size || sha256(raw) !== entry.checksum) {
+              throw new Error(`Raw binary checksum/size mismatch for ${platform}`)
+            }
+            if (gz.length !== entry.downloadSize || sha256(gz) !== entry.downloadChecksum) {
+              throw new Error(`Compressed binary checksum/size mismatch for ${platform}`)
+            }
+            if (!unpacked.equals(raw)) {
+              throw new Error(`Compressed binary does not unpack to raw binary for ${platform}`)
+            }
+
+            console.log(`${platform}: raw=${raw.length} gzip=${gz.length}`)
+          }
+
+          for (const channel of ['latest', 'stable']) {
+            const value = fs.readFileSync(`dist/update/secai-cli/${channel}`, 'utf8').trim()
+            if (value !== version) {
+              throw new Error(`${channel} points to ${value}, expected ${version}`)
+            }
+          }
+          NODE
+
+      - name: Publish to gateway
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_KEY DEPLOY_PORT DEPLOY_PATH; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required secret/env: $name" >&2
+              exit 1
+            fi
+          done
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/secai_deploy_key
+          chmod 600 ~/.ssh/secai_deploy_key
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/secai_deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH'"
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/secai_deploy_key -p $DEPLOY_PORT" \
+            dist/update/secai-cli/ \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
