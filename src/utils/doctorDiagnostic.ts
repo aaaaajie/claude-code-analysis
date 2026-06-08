@@ -386,6 +386,9 @@ async function detectConfigurationIssues(
     const homeDir = homedir()
     const nativeBinDir = getUserBinDir()
     const nativeBinDisplayPath = displayPath(nativeBinDir)
+    const nativeBinShellPath = nativeBinDisplayPath.startsWith('~/')
+      ? `$HOME/${nativeBinDisplayPath.slice(2)}`
+      : nativeBinDisplayPath
 
     // On Windows, convert backslashes to forward slashes for consistent path matching
     let normalizedNativeBinPath = nativeBinDir
@@ -436,7 +439,7 @@ async function detectConfigurationIssues(
         warnings.push({
           issue:
             `Native installation exists but ${nativeBinDisplayPath} is not in your PATH`,
-          fix: `Run: echo 'export PATH="${nativeBinDisplayPath}:$PATH"' >> ${displayPath} then open a new terminal or run: source ${displayPath}`,
+          fix: `Run: echo 'export PATH="${nativeBinShellPath}:$PATH"' >> ${displayPath} then open a new terminal or run: source ${displayPath}`,
         })
       }
     }

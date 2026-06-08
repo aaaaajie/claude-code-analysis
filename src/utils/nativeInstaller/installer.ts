@@ -927,7 +927,7 @@ export async function checkInstall(
         : 'your shell config file'
 
       messages.push({
-        message: `Native installation exists but ${localBinDir.replace(homedir(), '~')} is not in your PATH. Run:\n\necho 'export PATH="${localBinDir.replace(homedir(), '~')}:$PATH"' >> ${displayPath} && source ${displayPath}`,
+        message: `Native installation exists but ${localBinDir.replace(homedir(), '~')} is not in your PATH. Run:\n\necho 'export PATH="${localBinDir.replace(homedir(), '$HOME')}:$PATH"' >> ${displayPath} && source ${displayPath}`,
         userActionRequired: true,
         type: 'path',
       })

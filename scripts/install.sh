@@ -183,6 +183,7 @@ trap cleanup EXIT INT TERM
 
 MANIFEST="$TMP_DIR/manifest.json"
 BINARY_TMP="$TMP_DIR/secai.download"
+PACKAGE_TMP="$TMP_DIR/secai.package"
 download_file "$BASE_URL/$VERSION/manifest.json" "$MANIFEST"
 
 PLATFORM_BLOCK="$(awk -v platform="\"$PLATFORM\"" '
@@ -198,14 +199,42 @@ fi
 BINARY_NAME="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_string binary)"
 EXPECTED_SHA="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_string checksum)"
 EXPECTED_SIZE="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_number size)"
+DOWNLOAD_NAME="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_string download)"
+COMPRESSION="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_string compression)"
+DOWNLOAD_SHA="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_string downloadChecksum)"
+DOWNLOAD_SIZE="$(printf '%s\n' "$PLATFORM_BLOCK" | extract_number downloadSize)"
 
-if [ -z "$BINARY_NAME" ] || [ -z "$EXPECTED_SHA" ] || [ -z "$EXPECTED_SIZE" ]; then
+if [ -z "$BINARY_NAME" ] || [ -z "$EXPECTED_SHA" ] || [ -z "$EXPECTED_SIZE" ] || [ -z "$DOWNLOAD_NAME" ] || [ -z "$DOWNLOAD_SHA" ] || [ -z "$DOWNLOAD_SIZE" ] || [ "$COMPRESSION" != "gzip" ]; then
   printf 'Invalid manifest for %s %s.\n' "$VERSION" "$PLATFORM" >&2
+  printf 'Gzip download metadata is required.\n' >&2
+  exit 1
+fi
+
+if ! have gzip && ! have gunzip; then
+  printf 'gzip or gunzip is required to install SecAI.\n' >&2
   exit 1
 fi
 
 printf 'Installing SecAI %s for %s...\n' "$VERSION" "$PLATFORM"
-download_file "$BASE_URL/$VERSION/$PLATFORM/$BINARY_NAME" "$BINARY_TMP"
+download_file "$BASE_URL/$VERSION/$PLATFORM/$DOWNLOAD_NAME" "$PACKAGE_TMP"
+
+ACTUAL_DOWNLOAD_SIZE="$(wc -c < "$PACKAGE_TMP" | tr -d ' ')"
+if [ "$ACTUAL_DOWNLOAD_SIZE" != "$DOWNLOAD_SIZE" ]; then
+  printf 'Compressed size mismatch: expected %s, got %s.\n' "$DOWNLOAD_SIZE" "$ACTUAL_DOWNLOAD_SIZE" >&2
+  exit 1
+fi
+
+ACTUAL_DOWNLOAD_SHA="$(sha256_file "$PACKAGE_TMP")"
+if [ "$ACTUAL_DOWNLOAD_SHA" != "$DOWNLOAD_SHA" ]; then
+  printf 'Compressed checksum mismatch: expected %s, got %s.\n' "$DOWNLOAD_SHA" "$ACTUAL_DOWNLOAD_SHA" >&2
+  exit 1
+fi
+
+if have gzip; then
+  gzip -dc "$PACKAGE_TMP" > "$BINARY_TMP"
+else
+  gunzip -c "$PACKAGE_TMP" > "$BINARY_TMP"
+fi
 
 ACTUAL_SIZE="$(wc -c < "$BINARY_TMP" | tr -d ' ')"
 if [ "$ACTUAL_SIZE" != "$EXPECTED_SIZE" ]; then

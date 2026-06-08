@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
+import { gzipSync } from 'node:zlib'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distDir = join(root, 'dist')
@@ -98,14 +99,22 @@ function writeUpdateFeedFiles() {
   const versionDir = join(updateRoot, version)
   const platformDir = join(versionDir, target)
   const updateBinaryPath = join(platformDir, binaryName)
+  const compressedName = `${binaryName}.gz`
+  const updateCompressedPath = join(platformDir, compressedName)
   mkdirSync(platformDir, { recursive: true })
   copyFileSync(binaryPath, updateBinaryPath)
 
   const binary = readFileSync(updateBinaryPath)
+  const compressed = gzipSync(binary, { level: 9 })
+  writeFileSync(updateCompressedPath, compressed)
   const platformInfo = {
     binary: binaryName,
     checksum: createHash('sha256').update(binary).digest('hex'),
     size: binary.length,
+    download: compressedName,
+    compression: 'gzip',
+    downloadChecksum: createHash('sha256').update(compressed).digest('hex'),
+    downloadSize: compressed.length,
   }
   const manifest = {
     version,

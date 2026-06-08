@@ -64,6 +64,25 @@ function Save-Url([string]$Uri, [string]$OutFile) {
   }
 }
 
+function Expand-GzipFile([string]$Source, [string]$Destination) {
+  $inputStream = [IO.File]::OpenRead($Source)
+  try {
+    $outputStream = [IO.File]::Create($Destination)
+    try {
+      $gzipStream = [IO.Compression.GzipStream]::new($inputStream, [IO.Compression.CompressionMode]::Decompress)
+      try {
+        $gzipStream.CopyTo($outputStream)
+      } finally {
+        $gzipStream.Dispose()
+      }
+    } finally {
+      $outputStream.Dispose()
+    }
+  } finally {
+    $inputStream.Dispose()
+  }
+}
+
 $BaseUrl = Normalize-BaseUrl $BaseUrl
 $Platform = Get-SecAIPlatform
 
@@ -81,6 +100,7 @@ New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 try {
   $manifestPath = Join-Path $tmpDir "manifest.json"
   $binaryPath = Join-Path $tmpDir "secai.exe.download"
+  $packagePath = Join-Path $tmpDir "secai.exe.package"
 
   Save-Url "$BaseUrl/$Version/manifest.json" $manifestPath
   $manifest = Get-Content -Raw -Path $manifestPath | ConvertFrom-Json
@@ -88,9 +108,24 @@ try {
   if (-not $platformInfo) {
     throw "Unsupported platform: $Platform. Supported platforms: windows-x64, windows-arm64, macos-arm64, macos-x64, linux-x64, linux-arm64"
   }
+  if (-not $platformInfo.binary -or -not $platformInfo.checksum -or -not $platformInfo.size -or -not $platformInfo.download -or $platformInfo.compression -ne "gzip" -or -not $platformInfo.downloadChecksum -or -not $platformInfo.downloadSize) {
+    throw "Invalid manifest for $Version $Platform. Gzip download metadata is required."
+  }
 
   Write-Host "Installing SecAI $Version for $Platform..."
-  Save-Url "$BaseUrl/$Version/$Platform/$($platformInfo.binary)" $binaryPath
+  Save-Url "$BaseUrl/$Version/$Platform/$($platformInfo.download)" $packagePath
+
+  $actualDownloadSize = (Get-Item $packagePath).Length
+  if ($actualDownloadSize -ne [int64]$platformInfo.downloadSize) {
+    throw "Compressed size mismatch: expected $($platformInfo.downloadSize), got $actualDownloadSize"
+  }
+
+  $actualDownloadHash = (Get-FileHash -Algorithm SHA256 -Path $packagePath).Hash.ToLowerInvariant()
+  if ($actualDownloadHash -ne $platformInfo.downloadChecksum.ToLowerInvariant()) {
+    throw "Compressed checksum mismatch: expected $($platformInfo.downloadChecksum), got $actualDownloadHash"
+  }
+
+  Expand-GzipFile $packagePath $binaryPath
 
   $actualSize = (Get-Item $binaryPath).Length
   if ($actualSize -ne [int64]$platformInfo.size) {

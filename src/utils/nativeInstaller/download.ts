@@ -9,8 +9,9 @@
 import { feature } from 'bun:bundle'
 import axios from 'axios'
 import { createHash } from 'crypto'
-import { chmod, writeFile } from 'fs/promises'
+import { chmod, readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
+import { gunzipSync } from 'zlib'
 import { logEvent } from 'src/services/analytics/index.js'
 import type { ReleaseChannel } from '../config.js'
 import { logForDebugging } from '../debug.js'
@@ -377,6 +378,68 @@ async function downloadAndVerifyBinary(
   throw lastError ?? new Error('Download failed after all retries')
 }
 
+type BinaryRepoPlatformInfo = {
+  binary: string
+  checksum: string
+  size: number
+  download: string
+  compression: 'gzip'
+  downloadChecksum: string
+  downloadSize: number
+}
+
+function parsePlatformInfo(
+  platform: string,
+  value: unknown,
+): BinaryRepoPlatformInfo {
+  if (!value || typeof value !== 'object') {
+    throw new Error(`Invalid manifest entry for ${platform}`)
+  }
+
+  const info = value as Partial<BinaryRepoPlatformInfo>
+  if (
+    typeof info.binary !== 'string' ||
+    typeof info.checksum !== 'string' ||
+    typeof info.size !== 'number' ||
+    typeof info.download !== 'string' ||
+    info.compression !== 'gzip' ||
+    typeof info.downloadChecksum !== 'string' ||
+    typeof info.downloadSize !== 'number'
+  ) {
+    throw new Error(
+      `Invalid manifest entry for ${platform}: gzip download metadata is required`,
+    )
+  }
+
+  return info as BinaryRepoPlatformInfo
+}
+
+async function expandGzipAndVerifyBinary(
+  compressedPath: string,
+  binaryPath: string,
+  expectedBinaryChecksum: string,
+  expectedBinarySize: number,
+) {
+  const compressed = await readFile(compressedPath)
+  const binary = gunzipSync(compressed)
+  const actualSize = binary.length
+  if (actualSize !== expectedBinarySize) {
+    throw new Error(
+      `Decompressed size mismatch: expected ${expectedBinarySize}, got ${actualSize}`,
+    )
+  }
+
+  const actualChecksum = createHash('sha256').update(binary).digest('hex')
+  if (actualChecksum !== expectedBinaryChecksum) {
+    throw new Error(
+      `Decompressed checksum mismatch: expected ${expectedBinaryChecksum}, got ${actualChecksum}`,
+    )
+  }
+
+  await writeFile(binaryPath, binary)
+  await chmod(binaryPath, 0o755)
+}
+
 export async function downloadVersionFromBinaryRepo(
   version: string,
   stagingPath: string,
@@ -440,22 +503,36 @@ export async function downloadVersionFromBinaryRepo(
     )
   }
 
-  const expectedChecksum = platformInfo.checksum
+  const parsedPlatformInfo = parsePlatformInfo(platform, platformInfo)
+  const expectedChecksum = parsedPlatformInfo.checksum
 
   // Both GCS and generic bucket use identical layout: ${baseUrl}/${version}/${platform}/${binaryName}
   const binaryName = getBinaryName(platform)
-  const binaryUrl = `${baseUrl}/${version}/${platform}/${binaryName}`
+  if (parsedPlatformInfo.binary !== binaryName) {
+    throw new Error(
+      `Manifest binary mismatch for ${platform}: expected ${binaryName}, got ${parsedPlatformInfo.binary}`,
+    )
+  }
+  const downloadName = parsedPlatformInfo.download
+  const binaryUrl = `${baseUrl}/${version}/${platform}/${downloadName}`
 
   // Write to staging
   await fs.mkdir(stagingPath)
   const binaryPath = join(stagingPath, binaryName)
+  const downloadPath = join(stagingPath, downloadName)
 
   try {
     await downloadAndVerifyBinary(
       binaryUrl,
-      expectedChecksum,
-      binaryPath,
+      parsedPlatformInfo.downloadChecksum,
+      downloadPath,
       authConfig || {},
+    )
+    await expandGzipAndVerifyBinary(
+      downloadPath,
+      binaryPath,
+      expectedChecksum,
+      parsedPlatformInfo.size,
     )
     const latencyMs = Date.now() - startTime
     logEvent('tengu_binary_download_success', {
