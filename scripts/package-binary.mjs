@@ -172,7 +172,7 @@ function unixInstallScript() {
   return `#!/usr/bin/env sh
 set -eu
 
-PREFIX="$HOME/.local"
+PREFIX="$HOME/.secai"
 if [ "\${1:-}" = "--prefix" ]; then
   PREFIX="\${2:?missing prefix after --prefix}"
 fi
@@ -224,7 +224,7 @@ function unixUninstallScript() {
   return `#!/usr/bin/env sh
 set -eu
 
-PREFIX="$HOME/.local"
+PREFIX="$HOME/.secai"
 if [ "\${1:-}" = "--prefix" ]; then
   PREFIX="\${2:?missing prefix after --prefix}"
 fi

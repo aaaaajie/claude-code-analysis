@@ -5,9 +5,10 @@ import esbuild from 'esbuild'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const srcRoot = join(root, 'src')
+const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 
 const macro = {
-  VERSION: '1.1.0',
+  VERSION: packageJson.version,
   BUILD_TIME: new Date().toISOString(),
   ISSUES_EXPLAINER: 'contact SecAI support',
   FEEDBACK_CHANNEL: 'SecAI support',

@@ -42,6 +42,7 @@ import {
 } from './shellConfig.js'
 import { jsonParse } from './slowOperations.js'
 import { which } from './which.js'
+import { getUserBinDir } from './xdg.js'
 
 export type InstallationType =
   | 'npm-global'
@@ -81,6 +82,16 @@ function getNormalizedPaths(): [invokedPath: string, execPath: string] {
   }
 
   return [invokedPath, execPath]
+}
+
+function getNativeBinaryPath(): string {
+  return join(getUserBinDir(), getPlatform() === 'windows' ? 'secai.exe' : 'secai')
+}
+
+function displayPath(filePath: string): string {
+  return filePath.startsWith(homedir())
+    ? filePath.replace(homedir(), '~')
+    : filePath
 }
 
 export async function getCurrentInstallationType(): Promise<InstallationType> {
@@ -170,10 +181,11 @@ async function getInstallationPath(): Promise<string> {
       // This function doesn't expect errors
     }
 
-    // If we can't find it, check common locations
+    // If we can't find it, check the native installer location
     try {
-      await getFsImplementation().stat(join(homedir(), '.local/bin/secai'))
-      return join(homedir(), '.local/bin/secai')
+      const nativeBinaryPath = getNativeBinaryPath()
+      await getFsImplementation().stat(nativeBinaryPath)
+      return nativeBinaryPath
     } catch {
       // Not found
     }
@@ -243,7 +255,7 @@ async function detectMultipleInstallations(): Promise<
 
     if (globalBinExists) {
       // Check if this is actually a Homebrew cask installation, not npm-global
-      // When npm is installed via Homebrew, both can exist at /opt/homebrew/bin/claude
+      // When npm is installed via Homebrew, both can exist at /opt/homebrew/bin/secai
       // We need to resolve the symlink to see where it actually points
       let isCurrentHomebrewInstallation = false
 
@@ -285,8 +297,8 @@ async function detectMultipleInstallations(): Promise<
 
   // Check for native installation
 
-  // Check common native installation paths
-  const nativeBinPath = join(homedir(), '.local', 'bin', 'secai')
+  // Check the native installation path
+  const nativeBinPath = getNativeBinaryPath()
   try {
     await fs.stat(nativeBinPath)
     installations.push({ type: 'native', path: nativeBinPath })
@@ -367,21 +379,26 @@ async function detectConfigurationIssues(
     return warnings
   }
 
-  // Check if ~/.local/bin is in PATH for native installations
+  // Check if the native bin directory is in PATH for native installations
   if (type === 'native') {
     const path = process.env.PATH || ''
     const pathDirectories = path.split(delimiter)
     const homeDir = homedir()
-    const localBinPath = join(homeDir, '.local', 'bin')
+    const nativeBinDir = getUserBinDir()
+    const nativeBinDisplayPath = displayPath(nativeBinDir)
 
     // On Windows, convert backslashes to forward slashes for consistent path matching
-    let normalizedLocalBinPath = localBinPath
+    let normalizedNativeBinPath = nativeBinDir
     if (getPlatform() === 'windows') {
-      normalizedLocalBinPath = localBinPath.split(win32.sep).join(posix.sep)
+      normalizedNativeBinPath = nativeBinDir.split(win32.sep).join(posix.sep)
     }
 
-    // Check if ~/.local/bin is in PATH (handle both expanded and unexpanded forms)
+    // Check if the native bin directory is in PATH (handle expanded and unexpanded forms)
     // Also handle trailing slashes that users may have in their PATH
+    const homeRelativeNativeBin =
+      nativeBinDir.startsWith(homeDir) && nativeBinDir.length > homeDir.length
+        ? nativeBinDir.slice(homeDir.length + 1)
+        : null
     const localBinInPath = pathDirectories.some(dir => {
       let normalizedDir = dir
       if (getPlatform() === 'windows') {
@@ -391,9 +408,10 @@ async function detectConfigurationIssues(
       const trimmedDir = normalizedDir.replace(/\/+$/, '')
       const trimmedRawDir = dir.replace(/[/\\]+$/, '')
       return (
-        trimmedDir === normalizedLocalBinPath ||
-        trimmedRawDir === '~/.local/bin' ||
-        trimmedRawDir === '$HOME/.local/bin'
+        trimmedDir === normalizedNativeBinPath ||
+        (homeRelativeNativeBin !== null &&
+          (trimmedRawDir === `~/${homeRelativeNativeBin}` ||
+            trimmedRawDir === `$HOME/${homeRelativeNativeBin}`))
       )
     })
 
@@ -401,9 +419,7 @@ async function detectConfigurationIssues(
       const isWindows = getPlatform() === 'windows'
       if (isWindows) {
         // Windows-specific PATH instructions
-        const windowsLocalBinPath = localBinPath
-          .split(posix.sep)
-          .join(win32.sep)
+        const windowsLocalBinPath = nativeBinDir.split(posix.sep).join(win32.sep)
         warnings.push({
           issue: `Native installation exists but ${windowsLocalBinPath} is not in your PATH`,
           fix: `Add it by opening: System Properties → Environment Variables → Edit User PATH → New → Add the path above. Then restart your terminal.`,
@@ -419,8 +435,8 @@ async function detectConfigurationIssues(
 
         warnings.push({
           issue:
-            'Native installation exists but ~/.local/bin is not in your PATH',
-          fix: `Run: echo 'export PATH="$HOME/.local/bin:$PATH"' >> ${displayPath} then open a new terminal or run: source ${displayPath}`,
+            `Native installation exists but ${nativeBinDisplayPath} is not in your PATH`,
+          fix: `Run: echo 'export PATH="${nativeBinDisplayPath}:$PATH"' >> ${displayPath} then open a new terminal or run: source ${displayPath}`,
         })
       }
     }

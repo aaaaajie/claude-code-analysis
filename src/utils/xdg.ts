@@ -1,8 +1,5 @@
 /**
- * XDG Base Directory utilities for Claude CLI Native Installer
- *
- * Implements the XDG Base Directory specification for organizing
- * native installer components across appropriate system directories.
+ * XDG Base Directory utilities for the native installer.
  *
  * @see https://specifications.freedesktop.org/basedir-spec/latest/
  */
@@ -55,11 +52,17 @@ export function getXDGDataHome(options?: XDGOptions): string {
 }
 
 /**
- * Get user bin directory (not technically XDG but follows the convention)
- * Default: ~/.local/bin
- * @param options Optional homedir override for testing
+ * Get the SecAI user bin directory.
+ * Defaults match the public install scripts.
  */
 export function getUserBinDir(options?: XDGOptions): string {
-  const { home } = resolveOptions(options)
-  return join(home, '.local', 'bin')
+  const { env, home } = resolveOptions(options)
+  if (env.SECAI_INSTALL_DIR) {
+    return env.SECAI_INSTALL_DIR
+  }
+  if (process.platform === 'win32') {
+    const localAppData = env.LOCALAPPDATA ?? join(home, 'AppData', 'Local')
+    return join(localAppData, 'SecAI', 'bin')
+  }
+  return join(home, '.secai', 'bin')
 }

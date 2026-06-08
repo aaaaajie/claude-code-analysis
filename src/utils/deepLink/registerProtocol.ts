@@ -120,7 +120,7 @@ async function registerMacos(claudePath: string): Promise<void> {
 
   await fs.writeFile(path.join(contentsDir, 'Info.plist'), infoPlist)
 
-  // Symlink to the already-signed claude binary — avoids a new executable
+  // Symlink to the already-signed SecAI binary to avoid a new executable
   // that would need signing and endpoint-security allowlisting.
   // Written LAST among the throwing fs calls: isProtocolHandlerCurrent reads
   // this symlink, so it acts as the commit marker. If Info.plist write
@@ -215,7 +215,7 @@ async function registerWindows(claudePath: string): Promise<void> {
 export async function registerProtocolHandler(
   claudePath?: string,
 ): Promise<void> {
-  const resolved = claudePath ?? (await resolveClaudePath())
+  const resolved = claudePath ?? (await resolveSecAIPath())
 
   switch (process.platform) {
     case 'darwin':
@@ -233,13 +233,13 @@ export async function registerProtocolHandler(
 }
 
 /**
- * Resolve the claude binary path for protocol registration. Prefers the
- * native installer's stable symlink (~/.local/bin/claude) which survives
+ * Resolve the SecAI binary path for protocol registration. Prefers the
+ * native installer's stable path, which survives
  * auto-updates; falls back to process.execPath when the symlink is absent
  * (dev builds, non-native installs).
  */
-async function resolveClaudePath(): Promise<string> {
-  const binaryName = process.platform === 'win32' ? 'claude.exe' : 'claude'
+async function resolveSecAIPath(): Promise<string> {
+  const binaryName = process.platform === 'win32' ? 'secai.exe' : 'secai'
   const stablePath = path.join(getUserBinDir(), binaryName)
   try {
     await fs.realpath(stablePath)
@@ -303,7 +303,7 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
     return
   }
 
-  const claudePath = await resolveClaudePath()
+  const claudePath = await resolveSecAIPath()
   if (await isProtocolHandlerCurrent(claudePath)) {
     return
   }

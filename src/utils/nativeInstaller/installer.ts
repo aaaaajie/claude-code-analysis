@@ -463,7 +463,7 @@ async function performVersionUpdate(
     logForDebugging(`Version ${version} already installed, updating symlink`)
   }
 
-  // Create direct symlink from ~/.local/bin/secai to the version binary
+  // Create direct symlink from the user bin path to the version binary
   await removeDirectoryIfEmpty(executablePath)
   await updateSymlink(executablePath, installPath)
 
@@ -927,7 +927,7 @@ export async function checkInstall(
         : 'your shell config file'
 
       messages.push({
-        message: `Native installation exists but ~/.local/bin is not in your PATH. Run:\n\necho 'export PATH="$HOME/.local/bin:$PATH"' >> ${displayPath} && source ${displayPath}`,
+        message: `Native installation exists but ${localBinDir.replace(homedir(), '~')} is not in your PATH. Run:\n\necho 'export PATH="${localBinDir.replace(homedir(), '~')}:$PATH"' >> ${displayPath} && source ${displayPath}`,
         userActionRequired: true,
         type: 'path',
       })

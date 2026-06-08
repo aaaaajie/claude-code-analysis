@@ -1,5 +1,4 @@
 import { c as _c } from "react/compiler-runtime";
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import React, { useEffect, useState } from 'react';
 import type { CommandResultDisplay } from 'src/commands.js';
@@ -11,6 +10,7 @@ import { env } from '../utils/env.js';
 import { errorMessage } from '../utils/errors.js';
 import { checkInstall, cleanupNpmInstallations, cleanupShellAliases, installLatest } from '../utils/nativeInstaller/index.js';
 import { getInitialSettings, updateSettingsForSource } from '../utils/settings/settings.js';
+import { getUserBinDir } from '../utils/xdg.js';
 interface InstallProps {
   onDone: (result: string, options?: {
     display?: CommandResultDisplay;
@@ -41,14 +41,8 @@ type InstallState = {
 };
 function getInstallationPath(): string {
   const isWindows = env.platform === 'win32';
-  const homeDir = homedir();
-  if (isWindows) {
-    // Convert to Windows-style path
-    const windowsPath = join(homeDir, '.local', 'bin', 'claude.exe');
-    // Replace forward slashes with backslashes for Windows display
-    return windowsPath.replace(/\//g, '\\');
-  }
-  return '~/.local/bin/claude';
+  const installPath = join(getUserBinDir(), isWindows ? 'secai.exe' : 'secai');
+  return isWindows ? installPath.replace(/\//g, '\\') : installPath.replace(process.env.HOME ?? '', '~');
 }
 function SetupNotes(t0) {
   const $ = _c(5);
