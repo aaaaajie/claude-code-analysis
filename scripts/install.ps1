@@ -10,8 +10,10 @@ $ProgressPreference = "SilentlyContinue"
 
 function Write-Section([string]$Text) {
   Write-Host ""
+  Write-Host "----------------------------------------" -ForegroundColor DarkGray
   Write-Host "SecAI CLI Installer" -ForegroundColor Cyan
   Write-Host $Text -ForegroundColor DarkGray
+  Write-Host "----------------------------------------" -ForegroundColor DarkGray
   Write-Host ""
 }
 
@@ -25,6 +27,10 @@ function Write-Ok([string]$Text) {
 
 function Write-Warn([string]$Text) {
   Write-Host "WARN $Text" -ForegroundColor Yellow
+}
+
+function Write-SummaryRow([string]$Name, [string]$Value) {
+  Write-Host ("  {0,-9} {1}" -f $Name, $Value)
 }
 
 function Format-Bytes([int64]$Bytes) {
@@ -83,20 +89,56 @@ function Add-UserPath([string]$Dir) {
   }
 }
 
-function Save-Url([string]$Uri, [string]$OutFile) {
+function Save-Url([string]$Uri, [string]$OutFile, [switch]$ShowProgress) {
   $maxAttempts = 3
   for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
     try {
       Remove-Item -Force $OutFile -ErrorAction SilentlyContinue
-      Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+      if ($ShowProgress) {
+        Save-UrlWithProgress $Uri $OutFile
+      } else {
+        Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+      }
       return
     } catch {
+      Write-Progress -Activity "Downloading SecAI" -Completed -ErrorAction SilentlyContinue
       if ($attempt -eq $maxAttempts) {
         throw "Failed to download $Uri after $maxAttempts attempts: $($_.Exception.Message)"
       }
       Write-Host "Download failed, retrying ($attempt/$maxAttempts)..."
       Start-Sleep -Seconds (2 * $attempt)
     }
+  }
+}
+
+function Save-UrlWithProgress([string]$Uri, [string]$OutFile) {
+  $request = [Net.HttpWebRequest]::Create($Uri)
+  $request.UserAgent = "SecAI-Installer"
+  $response = $request.GetResponse()
+  try {
+    $total = [int64]$response.ContentLength
+    $inputStream = $response.GetResponseStream()
+    $outputStream = [IO.File]::Create($OutFile)
+    try {
+      $buffer = New-Object byte[] 1048576
+      $received = [int64]0
+      while (($read = $inputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+        $outputStream.Write($buffer, 0, $read)
+        $received += $read
+        if ($total -gt 0) {
+          $percent = [Math]::Min(100, [int](($received * 100) / $total))
+          Write-Progress -Activity "Downloading SecAI" -Status "$(Format-Bytes $received) / $(Format-Bytes $total)" -PercentComplete $percent
+        } else {
+          Write-Progress -Activity "Downloading SecAI" -Status "$(Format-Bytes $received) downloaded"
+        }
+      }
+    } finally {
+      $outputStream.Dispose()
+      $inputStream.Dispose()
+    }
+  } finally {
+    $response.Dispose()
+    Write-Progress -Activity "Downloading SecAI" -Completed -ErrorAction SilentlyContinue
   }
 }
 
@@ -121,7 +163,7 @@ function Expand-GzipFile([string]$Source, [string]$Destination) {
 
 $BaseUrl = Normalize-BaseUrl $BaseUrl
 $Platform = Get-SecAIPlatform
-Write-Section "Secure download, checksum verification, and local install."
+Write-Section "Secure install with verified downloads."
 
 if (-not $Version) {
   Write-Step "Resolving latest version from $Channel"
@@ -151,14 +193,16 @@ try {
     throw "Invalid manifest for $Version $Platform. Gzip download metadata is required."
   }
 
-  Write-Host "Version:  $Version"
-  Write-Host "Platform: $Platform"
-  Write-Host "Download: $(Format-Bytes ([int64]$platformInfo.downloadSize))"
-  Write-Host "Install:  $InstallDir"
+  Write-Host "----------------------------------------" -ForegroundColor DarkGray
+  Write-SummaryRow "Version" $Version
+  Write-SummaryRow "Platform" $Platform
+  Write-SummaryRow "Download" (Format-Bytes ([int64]$platformInfo.downloadSize))
+  Write-SummaryRow "Install" $InstallDir
+  Write-Host "----------------------------------------" -ForegroundColor DarkGray
   Write-Host ""
 
   Write-Step "Downloading SecAI"
-  Save-Url "$BaseUrl/$Version/$Platform/$($platformInfo.download)" $packagePath
+  Save-Url "$BaseUrl/$Version/$Platform/$($platformInfo.download)" $packagePath -ShowProgress
 
   $actualDownloadSize = (Get-Item $packagePath).Length
   if ($actualDownloadSize -ne [int64]$platformInfo.downloadSize) {
@@ -196,6 +240,10 @@ try {
   Write-Ok "Installed: $target"
   & $target --version
   Write-Warn "Git for Windows is required when SecAI executes shell tools."
+  Write-Host ""
+  Write-Host "----------------------------------------" -ForegroundColor DarkGray
+  Write-Ok "SecAI is ready."
+  Write-Host "----------------------------------------" -ForegroundColor DarkGray
 } finally {
   Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
 }

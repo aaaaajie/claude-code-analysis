@@ -26,8 +26,21 @@ info() {
   printf '%s\n' "$*"
 }
 
+rule() {
+  printf '%s\n' '────────────────────────────────────────'
+}
+
+header() {
+  info ""
+  rule
+  printf '%sSecAI CLI Installer%s\n' "$BOLD" "$RESET"
+  info "${DIM}Secure install with verified downloads.${RESET}"
+  rule
+  info ""
+}
+
 step() {
-  printf '%s==>%s %s\n' "$BOLD" "$RESET" "$*"
+  printf '\n%s==>%s %s\n' "$BOLD" "$RESET" "$*"
 }
 
 ok() {
@@ -125,10 +138,19 @@ fetch_text() {
 download_file() {
   url="$1"
   output="$2"
+  show_progress="${3:-0}"
   if have curl; then
-    curl -fsSL "$url" -o "$output"
+    if [ "$show_progress" = "1" ] && [ -t 2 ]; then
+      curl -fL --progress-bar "$url" -o "$output"
+    else
+      curl -fsSL "$url" -o "$output"
+    fi
   elif have wget; then
-    wget -qO "$output" "$url"
+    if [ "$show_progress" = "1" ] && [ -t 2 ]; then
+      wget -q --show-progress -O "$output" "$url"
+    else
+      wget -qO "$output" "$url"
+    fi
   else
     fail "curl or wget is required."
   fi
@@ -215,10 +237,7 @@ add_path_hint() {
   warn "Restart your terminal, or run: export PATH=\"$bin_dir:\$PATH\""
 }
 
-info ""
-info "${BOLD}SecAI CLI Installer${RESET}"
-info "${DIM}Secure download, checksum verification, and local install.${RESET}"
-info ""
+header
 
 PLATFORM="$(detect_platform)"
 if [ -z "$VERSION" ]; then
@@ -268,14 +287,15 @@ if ! have gzip && ! have gunzip; then
   fail "gzip or gunzip is required to install SecAI."
 fi
 
-info "Version:  $VERSION"
-info "Platform: $PLATFORM"
-info "Download: $(human_size "$DOWNLOAD_SIZE")"
-info "Install:  $INSTALL_DIR"
-info ""
+rule
+printf '  %-9s %s\n' 'Version' "$VERSION"
+printf '  %-9s %s\n' 'Platform' "$PLATFORM"
+printf '  %-9s %s\n' 'Download' "$(human_size "$DOWNLOAD_SIZE")"
+printf '  %-9s %s\n' 'Install' "$INSTALL_DIR"
+rule
 
 step "Downloading SecAI"
-download_file "$BASE_URL/$VERSION/$PLATFORM/$DOWNLOAD_NAME" "$PACKAGE_TMP"
+download_file "$BASE_URL/$VERSION/$PLATFORM/$DOWNLOAD_NAME" "$PACKAGE_TMP" 1
 
 ACTUAL_DOWNLOAD_SIZE="$(wc -c < "$PACKAGE_TMP" | tr -d ' ')"
 if [ "$ACTUAL_DOWNLOAD_SIZE" != "$DOWNLOAD_SIZE" ]; then
@@ -317,4 +337,8 @@ chmod 755 "$TARGET"
 add_path_hint "$INSTALL_DIR"
 ok "Installed: $TARGET"
 "$TARGET" --version
+info ""
+rule
+ok "SecAI is ready."
+rule
 info ""
