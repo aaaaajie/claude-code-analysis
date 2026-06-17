@@ -87,6 +87,15 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: Normalize update feed layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d dist/secai-cli ] && [ ! -d dist/update/secai-cli ]; then
+            mkdir -p dist/update
+            mv dist/secai-cli dist/update/secai-cli
+          fi
+
       - name: Merge platform manifests
         shell: bash
         run: |
