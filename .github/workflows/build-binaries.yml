@@ -47,14 +47,16 @@ jobs:
         env:
           SECAI_SKIP_BINARY_SMOKE: '1'
 
+      - name: Trim update payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          find dist/update/secai-cli -type f \( -name secai -o -name secai.exe \) -delete
+
       - uses: actions/upload-artifact@v4
         with:
           name: secai-${{ matrix.target }}
           path: |
-            dist/artifacts/secai-*-${{ matrix.target }}.tar.gz
-            dist/artifacts/secai-*-${{ matrix.target }}-installer.sh
-            dist/artifacts/secai-*-${{ matrix.target }}.zip
-            dist/artifacts/secai-*-${{ matrix.target }}-installer.ps1
             dist/update/secai-cli/**
           if-no-files-found: error
 
@@ -135,21 +137,17 @@ jobs:
               throw new Error(`Unsupported compression for ${platform}: ${entry.compression}`)
             }
 
-            const raw = fs.readFileSync(`${root}/${platform}/${entry.binary}`)
             const gz = fs.readFileSync(`${root}/${platform}/${entry.download}`)
             const unpacked = zlib.gunzipSync(gz)
 
-            if (raw.length !== entry.size || sha256(raw) !== entry.checksum) {
-              throw new Error(`Raw binary checksum/size mismatch for ${platform}`)
-            }
             if (gz.length !== entry.downloadSize || sha256(gz) !== entry.downloadChecksum) {
               throw new Error(`Compressed binary checksum/size mismatch for ${platform}`)
             }
-            if (!unpacked.equals(raw)) {
-              throw new Error(`Compressed binary does not unpack to raw binary for ${platform}`)
+            if (unpacked.length !== entry.size || sha256(unpacked) !== entry.checksum) {
+              throw new Error(`Unpacked binary checksum/size mismatch for ${platform}`)
             }
 
-            console.log(`${platform}: raw=${raw.length} gzip=${gz.length}`)
+            console.log(`${platform}: raw=${unpacked.length} gzip=${gz.length}`)
           }
 
           for (const channel of ['latest', 'stable']) {
@@ -178,8 +176,26 @@ jobs:
           chmod 600 ~/.ssh/secai_deploy_key
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-          ssh -i ~/.ssh/secai_deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH'"
+          version="${GITHUB_REF_NAME#v}"
+          remote="$DEPLOY_USER@$DEPLOY_HOST"
+          ssh_cmd="ssh -i ~/.ssh/secai_deploy_key -p $DEPLOY_PORT"
+          remote_tmp="$DEPLOY_PATH/.tmp-$version-$GITHUB_RUN_ID"
+
+          $ssh_cmd "$remote" "rm -rf '$remote_tmp' && mkdir -p '$remote_tmp' '$DEPLOY_PATH'"
           rsync -az --delete \
             -e "ssh -i ~/.ssh/secai_deploy_key -p $DEPLOY_PORT" \
-            dist/update/secai-cli/ \
-            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+            "dist/update/secai-cli/$version/" \
+            "$remote:$remote_tmp/"
+          rsync -az \
+            -e "ssh -i ~/.ssh/secai_deploy_key -p $DEPLOY_PORT" \
+            dist/update/secai-cli/install.sh \
+            dist/update/secai-cli/install.ps1 \
+            "$remote:$DEPLOY_PATH/"
+
+          $ssh_cmd "$remote" "
+            set -e
+            rm -rf '$DEPLOY_PATH/$version'
+            mv '$remote_tmp' '$DEPLOY_PATH/$version'
+            printf '%s\n' '$version' > '$DEPLOY_PATH/latest'
+            printf '%s\n' '$version' > '$DEPLOY_PATH/stable'
+          "
