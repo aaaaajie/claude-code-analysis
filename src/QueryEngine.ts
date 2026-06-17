@@ -20,6 +20,7 @@ import { EMPTY_USAGE } from 'src/services/api/logging.js'
 import stripAnsi from 'strip-ansi'
 import type { Command } from './commands.js'
 import { getSlashCommandToolSkills } from './commands.js'
+import { getSecAIReasoningLanguageSection } from './constants/secaiBehaviorGuidance.js'
 import {
   LOCAL_COMMAND_STDERR_TAG,
   LOCAL_COMMAND_STDOUT_TAG,
@@ -321,6 +322,7 @@ export class QueryEngine {
     const systemPrompt = asSystemPrompt([
       ...(customPrompt !== undefined ? [customPrompt] : defaultSystemPrompt),
       ...(memoryMechanicsPrompt ? [memoryMechanicsPrompt] : []),
+      getSecAIReasoningLanguageSection(),
       ...(appendSystemPrompt ? [appendSystemPrompt] : []),
     ])
 

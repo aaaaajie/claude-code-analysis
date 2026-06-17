@@ -8,7 +8,10 @@ import type { AgentDefinition } from '../tools/AgentTool/loadAgentsDir.js'
 import { isBuiltInAgent } from '../tools/AgentTool/loadAgentsDir.js'
 import { isEnvTruthy } from './envUtils.js'
 import { asSystemPrompt, type SystemPrompt } from './systemPromptType.js'
-import { getCoreBehaviorSections } from '../constants/secaiBehaviorGuidance.js'
+import {
+  getCoreBehaviorSections,
+  getSecAIReasoningLanguageSection,
+} from '../constants/secaiBehaviorGuidance.js'
 
 export { asSystemPrompt, type SystemPrompt } from './systemPromptType.js'
 
@@ -126,6 +129,7 @@ export function buildEffectiveSystemPrompt({
       : customSystemPrompt
         ? withCoreBehaviorSections(customSystemPrompt)
         : defaultSystemPrompt),
+    getSecAIReasoningLanguageSection(),
     ...(appendSystemPrompt ? [appendSystemPrompt] : []),
   ])
 }

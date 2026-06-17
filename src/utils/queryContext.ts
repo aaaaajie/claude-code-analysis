@@ -10,6 +10,7 @@
  */
 
 import type { Command } from '../commands.js'
+import { getSecAIReasoningLanguageSection } from '../constants/secaiBehaviorGuidance.js'
 import { getSystemPrompt } from '../constants/prompts.js'
 import { getSystemContext, getUserContext } from '../context.js'
 import type { MCPServerConnection } from '../services/mcp/types.js'
@@ -128,6 +129,7 @@ export async function buildSideQuestionFallbackParams({
     ...(customSystemPrompt !== undefined
       ? [customSystemPrompt]
       : defaultSystemPrompt),
+    getSecAIReasoningLanguageSection(),
     ...(appendSystemPrompt ? [appendSystemPrompt] : []),
   ])
 
