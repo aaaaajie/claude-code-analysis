@@ -91,6 +91,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          if [ -d "dist/$version" ] && [ ! -d dist/update/secai-cli ]; then
+            mkdir -p dist/update/secai-cli
+            mv "dist/$version" dist/update/secai-cli/
+            for file in install.sh install.ps1 latest stable; do
+              if [ -f "dist/$file" ]; then
+                mv "dist/$file" dist/update/secai-cli/
+              fi
+            done
+          fi
           if [ -d dist/secai-cli ] && [ ! -d dist/update/secai-cli ]; then
             mkdir -p dist/update
             mv dist/secai-cli dist/update/secai-cli
