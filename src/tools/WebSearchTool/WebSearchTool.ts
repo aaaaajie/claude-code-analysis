@@ -45,6 +45,9 @@ type SearchHit = {
   url: string
 }
 
+const DEFAULT_SECAI_WEB_SEARCH_URL =
+  'https://search.rzsec.cn/v1/web/search'
+
 const searchResultSchema = lazySchema(() => {
   const searchHitSchema = z.object({
     title: z.string().describe('The title of the search result'),
@@ -192,7 +195,9 @@ async function secAIWebSearch(
   input: Input,
   signal: AbortSignal,
 ): Promise<SearchHit[]> {
-  const configured = process.env.SECAI_WEB_SEARCH_URL?.trim()
+  const configured =
+    process.env.SECAI_WEB_SEARCH_URL?.trim() ||
+    (isSecAIActive() ? DEFAULT_SECAI_WEB_SEARCH_URL : '')
   const hits = configured
     ? await searchConfiguredEndpoint(configured, input, signal)
     : await searchPublicHTML(input, signal)
@@ -206,15 +211,61 @@ async function searchConfiguredEndpoint(
 ): Promise<SearchHit[]> {
   const url = new URL(endpoint)
   url.searchParams.set('q', input.query)
+  url.searchParams.set('limit', '8')
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
+  if (apiKey && shouldSendSecAIWebSearchAuth(url)) {
+    headers.Authorization = `Bearer ${apiKey}`
+  }
   const response = await fetch(url, {
     signal,
-    headers: { Accept: 'application/json' },
+    headers,
   })
   if (!response.ok) {
-    throw new Error(`SecAI web search endpoint failed: HTTP ${response.status}`)
+    const detail = await response.text().catch(() => '')
+    throw new Error(
+      `SecAI web search endpoint failed: HTTP ${response.status}${extractEndpointError(detail)}`,
+    )
   }
   const payload = (await response.json()) as unknown
   return searchHitsFromJSON(payload)
+}
+
+function shouldSendSecAIWebSearchAuth(url: URL): boolean {
+  const host = url.hostname.toLowerCase()
+  if (host === 'search.rzsec.cn' || host.endsWith('.rzsec.cn')) {
+    return true
+  }
+  const gateway = process.env.SECAI_GATEWAY_URL?.trim()
+  if (!gateway) {
+    return false
+  }
+  try {
+    return new URL(gateway).hostname.toLowerCase() === host
+  } catch {
+    return false
+  }
+}
+
+function extractEndpointError(raw: string): string {
+  if (!raw.trim()) {
+    return ''
+  }
+  try {
+    const parsed = JSON.parse(raw) as {
+      error?: { message?: unknown }
+      message?: unknown
+    }
+    const message =
+      typeof parsed.error?.message === 'string'
+        ? parsed.error.message
+        : typeof parsed.message === 'string'
+          ? parsed.message
+          : ''
+    return message ? ` - ${message}` : ''
+  } catch {
+    return ''
+  }
 }
 
 function searchHitsFromJSON(payload: unknown): SearchHit[] {
